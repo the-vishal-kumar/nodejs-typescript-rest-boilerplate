@@ -1,5 +1,5 @@
-import ForbiddenError from './forbidden';
+import CustomError from './custom';
 import NotFoundError from './notFound';
 import ValidationError from './validation';
 
-export { ForbiddenError, NotFoundError, ValidationError };
+export { CustomError, NotFoundError, ValidationError };

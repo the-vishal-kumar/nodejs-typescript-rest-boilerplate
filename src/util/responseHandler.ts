@@ -1,76 +1,100 @@
-import { Response } from 'express';
-import { ForbiddenError, NotFoundError, ValidationError } from '../error';
+import { CustomError, NotFoundError, ValidationError } from '../error';
+import { IResponseHandler } from '../type';
 
 export default class ResponseHandler {
   /**
-   * Handles a successful response by sending a JSON response with a status code of 200 and the provided data.
-   * @param {Object} res - The response object used to send the response.
-   * @param {any} data - The data to be included in the response.
+   * Handles a successful response by sending a JSON response with a default status code of 200 and the provided data.
+   * @param {IResponseHandler.SuccessData} successData - An object having the response object, optional statusCode and optional data object.
    * @returns {void}
    */
-  static handleSuccess = (res: Response, data: unknown): void => {
-    res.json({
-      status: 200,
+  static handleSuccess = (successData: IResponseHandler.SuccessData): void => {
+    const { res, statusCode, data } = successData;
+    const status = statusCode ?? 200;
+    res.status(status).json({
+      status,
       data,
     });
   };
 
   /**
-   * Handles a forbidden error by sending a JSON response with a status code of 403 and the provided error message.
-   * @param {Object} res - The response object used to send the response.
-   * @param {string} error - The error message to be included in the response.
+   * Handles a custom error by sending a JSON response with a status code of 403 and the provided error message.
+   * @param {IResponseHandler.ErrorData} errorData - An object having the response object, optional statusCode and optional error message.
    * @returns {void}
    */
-  static handleForbidden = (res: Response, error: string): void => {
-    const status = 403;
+  static handleCustom = (errorData: IResponseHandler.ErrorData): void => {
+    const { res, statusCode, error } = errorData;
+    const message = error?.message;
+    const status = statusCode ?? 403;
     res.status(status).json({
       status,
-      error,
-    });
-  };
-
-  /**
-   * Handles a not found error by sending a JSON response with a status code of 404 and the provided error message.
-   * @param {Object} res - The response object used to send the response.
-   * @param {string} error - The error message to be included in the response.
-   * @returns {void}
-   */
-  static handleNotFound = (res: Response, error = 'Resource not found'): void => {
-    const status = 404;
-    res.status(status).json({
-      status,
-      error,
+      error: message ?? 'Forbidden',
     });
   };
 
   /**
    * Handles a not found error by sending a JSON response with a status code of 400 and the provided error message.
-   * @param {Object} res - The response object used to send the response.
-   * @param {string} error - The error message to be included in the response.
+   * @param {IResponseHandler.ErrorData} errorData - An object having the response object, optional statusCode and optional error message.
    * @returns {void}
    */
-  static handleValidation = (res: Response, error: string): void => {
+  static handleValidation = (errorData: IResponseHandler.ErrorData): void => {
+    const { res, error, errors } = errorData;
+    const message = error?.message;
     const status = 400;
     res.status(status).json({
       status,
-      error,
+      error: message ?? 'Validation error',
+      errors,
+    });
+  };
+
+  /**
+   * Handles an authentication error by sending a JSON response with a status code of 401 and the provided error message.
+   * @param {IResponseHandler.ErrorData} errorData - An object having the response object, optional statusCode and optional error message.
+   * @returns {void}
+   */
+  static handleAuthentication = (errorData: IResponseHandler.ErrorData): void => {
+    const { res, error, errors } = errorData;
+    const message = error?.message;
+    const status = 401;
+    res.status(status).json({
+      status,
+      error: message ?? 'Authentication error',
+      errors,
+    });
+  };
+
+  /**
+   * Handles a not found error by sending a JSON response with a status code of 404 and the provided error message.
+   * @param {IResponseHandler.ErrorData} errorData - An object having the response object, optional statusCode and optional error message.
+   * @returns {void}
+   */
+  static handleNotFound = (errorData: IResponseHandler.ErrorData): void => {
+    const { res, error } = errorData;
+    const message = error?.message;
+    const status = 404;
+    res.status(status).json({
+      status,
+      error: message ?? 'Resource not found',
     });
   };
 
   /**
    * Handles an error by sending an appropriate JSON response based on the type of error.
-   * If the error is an instance of NotFoundError, it calls handleNotFound with the error message.
-   * If the error is an instance of ForbiddenError, it calls handleForbidden with the error message.
+   * If the error is an instance of CustomError, it calls handleCustom method.
+   * If the error is an instance of ValidationError, it calls handleValidation method.
+   * If the error is an instance of NotFoundError, it calls handleNotFound method.
    * Otherwise, it sends a JSON response with a status code of 500 and a generic error message.
    * @param {Object} res - The response object used to send the response.
    * @param {Error} error - The error object to be handled.
    * @returns {void}
    */
-  static handleError = (res: Response, error: Error): void => {
-    const { message } = error;
-    if (error instanceof ValidationError) this.handleValidation(res, message);
-    else if (error instanceof ForbiddenError) this.handleForbidden(res, message);
-    else if (error instanceof NotFoundError) this.handleNotFound(res, message);
+  static handleError = (errorData: IResponseHandler.ErrorData): void => {
+    const { res, error } = errorData;
+    if (error instanceof CustomError) {
+      const { statusCode } = error;
+      this.handleCustom({ res, statusCode, error });
+    } else if (error instanceof ValidationError) this.handleValidation({ res, error });
+    else if (error instanceof NotFoundError) this.handleNotFound({ res, error });
     else
       res.status(500).json({
         status: 500,

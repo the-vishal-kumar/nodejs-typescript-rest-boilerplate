@@ -1,4 +1,12 @@
 'use strict';
+
+const {
+  NEW_RELIC_APP_NAME,
+  NEW_RELIC_LICENSE_KEY,
+  NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED,
+  NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED,
+  NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED,
+} = process.env;
 /**
  * New Relic agent configuration.
  *
@@ -9,18 +17,18 @@ exports.config = {
   /**
    * Array of application names.
    */
-  app_name: ['nodejs-rest-boilerplate'],
+  app_name: [NEW_RELIC_APP_NAME],
   /**
    * Your New Relic license key.
    */
-  license_key: '17acb04bd8d7c1988079c39cd6e45149FFFFNRAL',
+  license_key: NEW_RELIC_LICENSE_KEY,
   logging: {
     /**
      * Level at which to log. 'trace' is most useful to New Relic when diagnosing
      * issues with the agent, 'info' and higher will impose the least overhead on
      * production applications.
      */
-    level: 'trace',
+    level: 'info',
   },
   /**
    * When true, all request headers except for those listed in attributes.exclude
@@ -52,11 +60,17 @@ exports.config = {
   },
   application_logging: {
     local_decorating: {
-      enabled: true,
+      enabled: NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED
+        ? Boolean(NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED)
+        : true,
     },
     forwarding: {
-      enabled: true,
-      max_samples_stored: 100000,
+      enabled: NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED
+        ? Boolean(NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED)
+        : true,
+      max_samples_stored: NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED
+        ? Number(NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED)
+        : 100000,
     },
   },
 };

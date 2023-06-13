@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuid } from 'uuid';
 import { Logger } from '../util';
 
 /**
@@ -22,7 +22,7 @@ interface LogEntry {
  * @param {NextFunction} next - The next middleware function.
  */
 const logRequest = (req: Request, res: Response, next: NextFunction): void => {
-  req.requestId = uuidv4();
+  req.requestId = uuid();
 
   const logEntry: LogEntry = {
     id: req.requestId,
@@ -44,7 +44,6 @@ const logRequest = (req: Request, res: Response, next: NextFunction): void => {
  */
 const logResponse = (req: Request, res: Response, next: NextFunction): void => {
   const requestId = req.requestId;
-
   /**
    * Cleanup function to remove event listeners.
    */
@@ -68,7 +67,6 @@ const logResponse = (req: Request, res: Response, next: NextFunction): void => {
       statusMessage: res.statusMessage,
       contentLength: parseInt(res.get('Content-Length') || '0', 10),
     };
-
     Logger.info(`Response:- ${JSON.stringify(logEntry)}`);
   };
 

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8000:3000'
+    environment:
+      - NODE_ENV=development
+    container_name: nodejs-typescript-rest-boilerplate
+    image: nodejs-typescript-rest-boilerplate-image

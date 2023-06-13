@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import 'newrelic';
 
-import App from './app';
+import { NodeApp } from './app';
 import { Logger } from './util';
 
 const main = async (): Promise<void> => {
-  const app = new App();
+  const app = new NodeApp();
   const port = Number(process.env.PORT) || 3000;
 
   const server = await app.start(port);
@@ -22,9 +22,8 @@ const main = async (): Promise<void> => {
 
   process.on('SIGTERM', async () => {
     Logger.error('SIGTERM signal received:- closing HTTP server');
-    server.close(() => {
-      Logger.error('HTTP server closed');
-    });
+    await server.close();
+    Logger.error('HTTP server closed');
   });
 };
 

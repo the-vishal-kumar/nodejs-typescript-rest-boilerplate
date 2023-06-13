@@ -128,6 +128,15 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+yarn.lock
 
 # Build
 build
+
+# Docker configurations
+docker-compose.yml
+
+# System specifics
+other/
+.vscode
+.DS_STORE
