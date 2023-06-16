@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { validateAccessToken, validateSchema } from '../middleware';
+import { validateAccessToken, validateIsAdmin, validateSchema } from '../middleware';
 import { AuthSchema } from '../schema';
 import { AuthController } from '../controller';
 import { ResponseHandler } from '../util';
@@ -19,14 +19,15 @@ export default class AuthRoute {
   private initRoutes(): void {
     this.router.post('/signup', validateSchema(signupSchema), this.signup);
     this.router.post('/signin', validateSchema(signinSchema), this.signin);
+    this.router.post('/signin/admin', validateSchema(signinSchema), validateIsAdmin, this.signinAdmin);
     this.router.post('/signoff', validateAccessToken, this.signoff);
-    this.router.post('/password/reset', validateAccessToken, validateSchema(resetPasswordSchema), this.resetPassword);
+    this.router.put('/password/reset', validateSchema(resetPasswordSchema), validateAccessToken, this.resetPassword);
   }
 
   signup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { email, password } = req.body;
-      await this.authController.signup(email, password);
+      const { email, password, firstName, lastName } = req.body;
+      await this.authController.signup({ email, password, firstName, lastName });
       handleSuccess({ res, statusCode: 204 });
     } catch (error) {
       next(error);
@@ -43,9 +44,19 @@ export default class AuthRoute {
     }
   };
 
+  signinAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+      const accessToken = await this.authController.signin(email, password, true);
+      handleSuccess({ res, data: { accessToken } });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   signoff = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await this.authController.signoff(req.accessToken as string);
+      await this.authController.signoff(req.tokenId as string);
       handleSuccess({ res, statusCode: 204 });
     } catch (error) {
       next(error);
@@ -55,7 +66,7 @@ export default class AuthRoute {
   resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { password } = req.body;
-      await this.authController.resetPassword(req.user.id, password);
+      await this.authController.resetPassword(req.user?._id, req.user?.password as string, password);
       handleSuccess({ res, statusCode: 204 });
     } catch (error) {
       next(error);

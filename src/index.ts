@@ -1,14 +1,16 @@
 import 'dotenv/config';
 import 'newrelic';
 
-import { NodeApp } from './app';
+import { NodeApp, MongoApp } from './app';
 import { Logger } from './util';
 
 const main = async (): Promise<void> => {
-  const app = new NodeApp();
-  const port = Number(process.env.PORT) || 3000;
+  const mongoApp = new MongoApp();
+  const mongoServer = await mongoApp.init();
 
-  const server = await app.start(port);
+  const nodeApp = new NodeApp();
+  const port = Number(process.env.PORT) || 3000;
+  const nodeServer = await nodeApp.init(port);
 
   process.on('uncaughtException', err => {
     Logger.error('Uncaught Exception:- ', err);
@@ -16,14 +18,18 @@ const main = async (): Promise<void> => {
   });
 
   process.on(`unhandledRejection`, err => {
-    Logger.log(`Unhandled Rejection:- `, err);
+    Logger.error(`Unhandled Rejection:- `, err);
     process.exit(2);
   });
 
   process.on('SIGTERM', async () => {
-    Logger.error('SIGTERM signal received:- closing HTTP server');
-    await server.close();
-    Logger.error('HTTP server closed');
+    Logger.error('☠️SIGTERM signal received');
+
+    if (nodeServer && nodeServer.close) await nodeServer.close();
+    Logger.error('NodeJs server closed');
+
+    if (mongoServer && mongoServer.disconnect) await mongoServer.disconnect();
+    Logger.error('Mongo database disconnected');
   });
 };
 

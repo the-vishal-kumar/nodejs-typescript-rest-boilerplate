@@ -1,4 +1,4 @@
-import { User } from '../IUser';
+import { IUserDocument } from '../User';
 
 export {};
 
@@ -6,8 +6,8 @@ declare global {
   namespace Express {
     export interface Request {
       requestId: string;
-      accessToken?: string;
-      user?: Partial<User>;
+      tokenId?: string;
+      user?: IUserDocument;
     }
   }
 }

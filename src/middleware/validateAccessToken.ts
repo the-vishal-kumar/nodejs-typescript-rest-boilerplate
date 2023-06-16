@@ -1,20 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { ResponseHandler } from '../util';
-import { TestDatabaseApp } from '../app';
-const { handleAuthentication } = ResponseHandler;
+import { AuthenticationError } from '../error';
+import { Token, User } from '../model';
 
 const validateAccessToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { authorization } = req.headers;
-  const token = authorization && authorization.split(` `)[1];
-  if (!token) return handleAuthentication({ res, statusCode: 401, error: new Error('Missing access token') });
+  const accessToken = authorization && authorization.split(` `)[1];
+  if (!accessToken) return next(new AuthenticationError('Missing access token'));
 
-  const accessToken = await TestDatabaseApp.findAccessToken({ token });
-  if (!accessToken) return handleAuthentication({ res, statusCode: 401, error: new Error('Invalid access token') });
+  const token = await Token.findOne({ accessToken });
+  if (!token) return next(new AuthenticationError('Invalid access token'));
 
-  const user = await TestDatabaseApp.findUser({ id: accessToken.userId });
-  if (!user) return handleAuthentication({ res, statusCode: 401 });
+  const user = await User.findById(token.userId);
+  if (!user) return next(new AuthenticationError());
 
-  req.accessToken = token;
+  req.tokenId = token._id;
   req.user = user;
 
   return next();

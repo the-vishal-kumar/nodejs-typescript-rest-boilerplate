@@ -28,7 +28,10 @@ const logRequest = (req: Request, res: Response, next: NextFunction): void => {
     id: req.requestId,
     path: req.path,
     method: req.method,
-    payload: req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+    payload:
+      req.method === 'GET' || req.method === 'DELETE'
+        ? { ...req.query, ...req.params }
+        : { ...req.body, ...req.params },
   };
 
   Logger.info(`Request:- ${JSON.stringify(logEntry)}`);
@@ -62,7 +65,10 @@ const logResponse = (req: Request, res: Response, next: NextFunction): void => {
       id: requestId,
       path: req.path,
       method: req.method,
-      payload: req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+      payload:
+        req.method === 'GET' || req.method === 'DELETE'
+          ? { ...req.query, ...req.params }
+          : { ...req.body, ...req.params },
       statusCode: res.statusCode,
       statusMessage: res.statusMessage,
       contentLength: parseInt(res.get('Content-Length') || '0', 10),
@@ -80,7 +86,10 @@ const logResponse = (req: Request, res: Response, next: NextFunction): void => {
         id: requestId,
         path: req.path,
         method: req.method,
-        payload: req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+        payload:
+          req.method === 'GET' || req.method === 'DELETE'
+            ? { ...req.query, ...req.params }
+            : { ...req.body, ...req.params },
       })}`,
     );
   };
@@ -96,7 +105,10 @@ const logResponse = (req: Request, res: Response, next: NextFunction): void => {
         id: requestId,
         path: req.path,
         method: req.method,
-        payload: req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+        payload:
+          req.method === 'GET' || req.method === 'DELETE'
+            ? { ...req.query, ...req.params }
+            : { ...req.body, ...req.params },
         err,
       })}`,
       err,

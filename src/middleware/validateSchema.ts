@@ -11,7 +11,9 @@ const validateSchema =
       allowUnknown: false,
     };
     const { error }: ValidationResult = schema.validate(
-      req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+      req.method === 'GET' || req.method === 'DELETE'
+        ? { ...req.query, ...req.params }
+        : { ...req.body, ...req.params },
       options,
     );
     if (error) {

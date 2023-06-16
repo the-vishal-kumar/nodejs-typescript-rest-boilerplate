@@ -1,12 +1,25 @@
-version: '3'
+version: '3.8'
 services:
-  app:
+  node:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./src/app/node-server/Dockerfile
+    depends_on:
+      - mongo
     ports:
-      - '8000:3000'
+      - '3000:3000'
     environment:
-      - NODE_ENV=development
-    container_name: nodejs-typescript-rest-boilerplate
-    image: nodejs-typescript-rest-boilerplate-image
+      - MONGO_URL=mongodb://mongo:27017/ntrb
+    volumes:
+      - ./:/data/source-code
+    container_name: ntrb-nodejs
+    image: ntrb-nodejs-image
+
+  mongo:
+    build:
+      context: ./
+      dockerfile: ./src/app/mongo-server/Dockerfile
+    ports:
+      - '27018:27017'
+    container_name: ntrb-mongodb
+    image: ntrb-mongodb-image

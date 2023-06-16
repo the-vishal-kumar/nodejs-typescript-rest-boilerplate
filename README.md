@@ -9,6 +9,15 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
 - It uses [ESLint], [Prettier], [CommitLint], [Husky] for maintaining code quality.
 - It uses [New Relic] for error logging, application performance monitoring, log monitoring.
 
+## Problem Statement
+
+- It is an app that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and“loan term”.
+- All the loans will be assumed to have a “weekly” repayment frequency.
+- After the loan is approved, the user must be able to submit the weekly loan repayments.
+- It can be a simplified repay functionality, which won’t need to check if the dates are correct but will just set the weekly amount to be repaid.
+
+  [Read more...](./PROBLEM.md)
+
 ## Initial setup
 
 1. Clone from Github
@@ -39,6 +48,7 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
 
 ## Development
 
+<!--
 1. Run server locally without docker-compose with either of the following commands:
    ```bash
    npm start
@@ -46,6 +56,9 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
    ```bash
    npm run dev # start with nodemon
    ```
+   Pre-requisite: Update MONGO_URL in .env
+-->
+
 1. Run server locally with docker-compose with either of the following commands:
    ```bash
    npm run docker-compose # runs the already built docker image
@@ -56,12 +69,16 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
 
 ## Testing
 
-1. Some unit and end-to-end tests are included in `src/test` directory
+1. Some unit tests are included in `src/test` directory. End-to-end tests will be included shortly
 1. Tests are run using [Jest] and [Supertest]
 1. Run tests
    ```bash
    npm test
    ```
+
+## API Documentation
+
+1. [Postman Collection](./Postman/nodejs-typescript-rest-boilerplate.postman_collection.json) : [Postman Environment](./Postman//nodejs-typescript-rest-boilerplate.postman_environment.json) - Import these files to Postman to know about the APIs schema
 
 ## Technology
 
@@ -156,50 +173,79 @@ In app's settings, set correctly all required config variables
       ┃ ┣ 📜commit-msg
       ┃ ┣ 📜pre-commit
       ┃ ┗ 📜pre-push
+      ┣ 📂Postman
+      ┃ ┣ 📜nodejs-typescript-rest-boilerplate.postman_collection.json
+      ┃ ┗ 📜nodejs-typescript-rest-boilerplate.postman_environment.json
       ┣ 📂src
       ┃ ┣ 📂app
+      ┃ ┃ ┣ 📂mongo-server
+      ┃ ┃ ┃ ┣ 📜Dockerfile
+      ┃ ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┣ 📂node-server
+      ┃ ┃ ┃ ┣ 📜Dockerfile
+      ┃ ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┗ 📜index.ts
+      ┃ ┣ 📂config
       ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜node-server.ts
-      ┃ ┃ ┗ 📜test-database.ts
+      ┃ ┃ ┗ 📜mongo-config.ts
       ┃ ┣ 📂controller
       ┃ ┃ ┣ 📜auth.ts
-      ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┣ 📜index.ts
+      ┃ ┃ ┣ 📜loan.ts
+      ┃ ┃ ┗ 📜repayment.ts
       ┃ ┣ 📂error
+      ┃ ┃ ┣ 📜authentication.ts
+      ┃ ┃ ┣ 📜authorization.ts
       ┃ ┃ ┣ 📜custom.ts
       ┃ ┃ ┣ 📜index.ts
       ┃ ┃ ┣ 📜notFound.ts
       ┃ ┃ ┗ 📜validation.ts
       ┃ ┣ 📂middleware
-      ┃ ┃ ┣ 📜auth.ts
       ┃ ┃ ┣ 📜index.ts
       ┃ ┃ ┣ 📜logRequestResponse.ts
       ┃ ┃ ┣ 📜validateAccessToken.ts
+      ┃ ┃ ┣ 📜validateIsAdmin.ts
       ┃ ┃ ┗ 📜validateSchema.ts
+      ┃ ┣ 📂model
+      ┃ ┃ ┣ 📜index.ts
+      ┃ ┃ ┣ 📜loan.ts
+      ┃ ┃ ┣ 📜repayment.ts
+      ┃ ┃ ┣ 📜token.ts
+      ┃ ┃ ┗ 📜user.ts
       ┃ ┣ 📂route
       ┃ ┃ ┣ 📜auth.ts
       ┃ ┃ ┣ 📜home.ts
-      ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┣ 📜index.ts
+      ┃ ┃ ┣ 📜loan.ts
+      ┃ ┃ ┗ 📜repayment.ts
       ┃ ┣ 📂schema
       ┃ ┃ ┣ 📜auth.ts
-      ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┣ 📜index.ts
+      ┃ ┃ ┣ 📜loan.ts
+      ┃ ┃ ┗ 📜repayment.ts
       ┃ ┣ 📂test
       ┃ ┃ ┣ 📂e2e
       ┃ ┃ ┃ ┗ 📜auth.e2e.test.ts
       ┃ ┃ ┗ 📂unit
-      ┃ ┃ ┃ ┣ 📂controller
-      ┃ ┃ ┃ ┃ ┗ 📜auth.unit.test.ts
       ┃ ┃ ┃ ┗ 📂util
+      ┃ ┃ ┃ ┃ ┣ 📜enum.unit.test.ts
+      ┃ ┃ ┃ ┃ ┣ 📜money.unit.test.ts
       ┃ ┃ ┃ ┃ ┗ 📜password.unit.test.ts
       ┃ ┣ 📂type
       ┃ ┃ ┣ 📂express
       ┃ ┃ ┃ ┗ 📜index.d.ts
-      ┃ ┃ ┣ 📜IAccessToken.ts
       ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜IResponseHandler.ts
-      ┃ ┃ ┗ 📜IUser.ts
+      ┃ ┃ ┣ 📜Loan.ts
+      ┃ ┃ ┣ 📜LoanRepayment.ts
+      ┃ ┃ ┣ 📜Repayment.ts
+      ┃ ┃ ┣ 📜ResponseHandler.ts
+      ┃ ┃ ┣ 📜Token.ts
+      ┃ ┃ ┗ 📜User.ts
       ┃ ┣ 📂util
+      ┃ ┃ ┣ 📜enum.ts
       ┃ ┃ ┣ 📜index.ts
       ┃ ┃ ┣ 📜logger.ts
+      ┃ ┃ ┣ 📜money.ts
       ┃ ┃ ┣ 📜pagination.ts
       ┃ ┃ ┣ 📜password.ts
       ┃ ┃ ┗ 📜responseHandler.ts
@@ -215,13 +261,13 @@ In app's settings, set correctly all required config variables
       ┣ 📜.prettierrc.json
       ┣ 📜docker-compose.sample.yml
       ┣ 📜docker-compose.yml
-      ┣ 📜Dockerfile
       ┣ 📜jest.config.js
       ┣ 📜LICENSE
       ┣ 📜newrelic.js
       ┣ 📜newrelic_agent.log
       ┣ 📜package-lock.json
       ┣ 📜package.json
+      ┣ 📜PROBLEM.md
       ┣ 📜README.md
       ┗ 📜tsconfig.json
 

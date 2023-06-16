@@ -1,4 +1,4 @@
 import NodeApp from './node-server';
-import TestDatabaseApp from './test-database';
+import MongoApp from './mongo-server';
 
-export { NodeApp, TestDatabaseApp };
+export { NodeApp, MongoApp };

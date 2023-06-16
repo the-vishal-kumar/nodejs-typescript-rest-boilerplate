@@ -1,4 +1,5 @@
 import AuthRoute from './auth';
 import HomeRoute from './home';
+import { UserLoanRoute, AdminLoanRoute } from './loan';
 
-export { AuthRoute, HomeRoute };
+export { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute };

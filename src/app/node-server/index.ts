@@ -5,17 +5,18 @@ import compression from 'compression';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { Server } from 'http';
-import { ResponseHandler, Logger } from '../util';
-import { logRequestResponse } from '../middleware';
-import { HomeRoute, AuthRoute } from '../route';
+import { ResponseHandler, Logger } from '../../util';
+import { logRequestResponse } from '../../middleware';
+import { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute } from '../../route';
+import { RepaymentRoute } from '../../route/repayment';
 const { handleNotFound, handleError } = ResponseHandler;
 const { logRequest, logResponse } = logRequestResponse;
 
 /**
  * Represents an Express application.
- * @class App
+ * @class NodeApp
  */
-class App {
+class NodeApp {
   expressApp: Express;
 
   constructor() {
@@ -50,6 +51,15 @@ class App {
 
     const authRoute = new AuthRoute();
     this.expressApp.use('/auth', authRoute.router);
+
+    const userLoanRoute = new UserLoanRoute();
+    this.expressApp.use('/loan', userLoanRoute.router);
+
+    const adminLoanRoute = new AdminLoanRoute();
+    this.expressApp.use('/loan', adminLoanRoute.router);
+
+    const repaymentRoute = new RepaymentRoute();
+    this.expressApp.use('/loan', repaymentRoute.router);
   }
 
   notFoundHandler(): void {
@@ -84,17 +94,17 @@ class App {
    * @param {number} port - The port number to listen on.
    * @returns {Promise<Server>}
    */
-  async start(port: number): Promise<Server> {
+  async init(port: number): Promise<Server> {
     this.attachMiddlewares();
     this.configureRoutes();
     this.notFoundHandler();
     this.errorHandler();
 
     const server = await this.expressApp.listen(port);
-    Logger.info(`🚀Server is running at http://localhost:${port}`);
+    Logger.info(`🚀NodeJs server is listening at http://localhost:${port}`);
 
     return server;
   }
 }
 
-export default App;
+export default NodeApp;
