@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "896d5608-0cd9-493d-8c90-602028d73b57",
+		"_postman_id": "624863a7-01e2-4697-b4c8-2878908ccb0c",
 		"name": "nodejs-typescript-rest-boilerplate",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "15813424"
+		"_exporter_id": "7666121"
 	},
 	"item": [
 		{
@@ -16,7 +16,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\": \"vishal194kumar@gmail.com\",\r\n    \"password\": \"strong-password\",\r\n    \"firstName\": \"Vishal\"\r\n}",
+							"raw": "{\r\n    \"email\": \"user@example.com\",\r\n    \"password\": \"strong-password\",\r\n    \"firstName\": \"User\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -31,6 +31,34 @@
 							"path": [
 								"auth",
 								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup Admin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"strong-password\",\r\n    \"firstName\": \"Admin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/auth/signup/admin",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"auth",
+								"signup",
+								"admin"
 							]
 						}
 					},
@@ -55,7 +83,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\": \"vishal194kumar@gmail.com\",\r\n    \"password\": \"strong-password\"\r\n}",
+							"raw": "{\r\n    \"email\": \"user@example.com\",\r\n    \"password\": \"strong-password\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -97,7 +125,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\": \"vishal194kumar+007@gmail.com\",\r\n    \"password\": \"strong-password\"\r\n}",
+							"raw": "{\r\n    \"email\": \"admin@example.com\",\r\n    \"password\": \"strong-password\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -391,14 +419,38 @@
 			]
 		},
 		{
-			"name": "Home",
+			"name": "Make payment",
 			"request": {
-				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 7\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "{{host}}",
+					"raw": "{{host}}/loan/{{id}}/repayment",
 					"host": [
 						"{{host}}"
+					],
+					"path": [
+						"loan",
+						"{{id}}",
+						"repayment"
 					]
 				}
 			},
