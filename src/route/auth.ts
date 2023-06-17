@@ -19,6 +19,7 @@ export default class AuthRoute {
   private initRoutes(): void {
     this.router.post('/signup', validateSchema(signupSchema), this.signup);
     this.router.post('/signin', validateSchema(signinSchema), this.signin);
+    this.router.post('/signup/admin', validateSchema(signupSchema), this.signupAdmin);
     this.router.post('/signin/admin', validateSchema(signinSchema), validateIsAdmin, this.signinAdmin);
     this.router.post('/signoff', validateAccessToken, this.signoff);
     this.router.put('/password/reset', validateSchema(resetPasswordSchema), validateAccessToken, this.resetPassword);
@@ -34,10 +35,20 @@ export default class AuthRoute {
     }
   };
 
+  signupAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      await this.authController.signup({ email, password, firstName, lastName, isAdmin: true });
+      handleSuccess({ res, statusCode: 204 });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   signin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
-      const accessToken = await this.authController.signin(email, password);
+      const accessToken = await this.authController.signin({ email, password });
       handleSuccess({ res, data: { accessToken } });
     } catch (error) {
       next(error);
@@ -47,7 +58,7 @@ export default class AuthRoute {
   signinAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, password } = req.body;
-      const accessToken = await this.authController.signin(email, password, true);
+      const accessToken = await this.authController.signin({ email, password, isAdmin: true });
       handleSuccess({ res, data: { accessToken } });
     } catch (error) {
       next(error);
@@ -66,7 +77,7 @@ export default class AuthRoute {
   resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { password } = req.body;
-      await this.authController.resetPassword(req.user?._id, req.user?.password as string, password);
+      await this.authController.resetPassword({ userId: req.user?._id, storedPassword: req.user?.password as string, suppliedPassword: password });
       handleSuccess({ res, statusCode: 204 });
     } catch (error) {
       next(error);
