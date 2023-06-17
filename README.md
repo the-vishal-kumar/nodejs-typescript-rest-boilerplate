@@ -19,9 +19,9 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
   [Read more...](./PROBLEM.md)
 
 ## Solution
-   - There are four entities - User, Token, Loan, Repayment
-   - Admin can signup, signin, apprive a loan request, singoff, or reset password
-   - User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
+- There are four entities - User, Token, Loan, Repayment
+- Admin can signup, signin, apprive a loan request, singoff, or reset password
+- User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
 
    [Read more...](./SOLUTION.md)
 

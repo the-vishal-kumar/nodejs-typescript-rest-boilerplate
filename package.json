@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "npm run build && node .",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q build/index.js\"",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q .\"",
     "docker-compose": "docker-compose up",
     "docker-compose-build": "docker-compose up --build",
     "test": "jest",
