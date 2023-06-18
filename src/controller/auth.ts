@@ -14,13 +14,13 @@ export default class AuthController {
     password,
     firstName,
     lastName,
-    isAdmin
+    isAdmin,
   }: {
     email: string;
     password: string;
     firstName: string;
     lastName?: string;
-    isAdmin?: boolean
+    isAdmin?: boolean;
   }): Promise<void> {
     const userEmail = email.trim().toLowerCase();
 
@@ -40,7 +40,7 @@ export default class AuthController {
     await user.save();
   }
 
-  async signin({ email, password, isAdmin }: { email: string, password: string, isAdmin?: boolean }): Promise<string> {
+  async signin({ email, password, isAdmin }: { email: string; password: string; isAdmin?: boolean }): Promise<string> {
     const userEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: userEmail });
     if (!user) throw new AuthenticationError('Invalid email or password');
@@ -68,7 +68,15 @@ export default class AuthController {
     await Token.deleteOne({ _id: tokenId });
   }
 
-  async resetPassword({ userId, storedPassword, suppliedPassword }: { userId: string, storedPassword: string, suppliedPassword: string }): Promise<void> {
+  async resetPassword({
+    userId,
+    storedPassword,
+    suppliedPassword,
+  }: {
+    userId: string;
+    storedPassword: string;
+    suppliedPassword: string;
+  }): Promise<void> {
     const newPassword = await Password.hashPassword(suppliedPassword);
     const passwordMatches = await Password.comparePassword(storedPassword, suppliedPassword);
     if (passwordMatches) throw new CustomError('New password cannot be same as Old password', 403);

@@ -77,7 +77,11 @@ export default class AuthRoute {
   resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { password } = req.body;
-      await this.authController.resetPassword({ userId: req.user?._id, storedPassword: req.user?.password as string, suppliedPassword: password });
+      await this.authController.resetPassword({
+        userId: req.user?._id,
+        storedPassword: req.user?.password as string,
+        suppliedPassword: password,
+      });
       handleSuccess({ res, statusCode: 204 });
     } catch (error) {
       next(error);

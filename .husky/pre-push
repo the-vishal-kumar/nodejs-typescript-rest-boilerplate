@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+
 STATUS=$(git status --porcelain | wc -l | xargs)
 FILES=$(git status --porcelain | sed -n "s;^.. \(.*\)$;\\\t\\\t\1\\\n;p")
 
@@ -9,10 +10,11 @@ GREEN='\033[0;32m'
 NO_COLOR='\033[0m'
 
 if [ $STATUS -ne 0 ]; then
-  echo -e "${RED}✖ Make sure all changes are staged and committed before pushing${NO_COLOR}"
-  echo -e "${RED}\tDetected changes in:${NO_COLOR}"
-  echo -e "${RED}$FILES${NO_COLOR}"
+  echo $RED'✖ Make sure all changes are staged and committed before pushing'$NO_COLOR
+  echo $RED'\tDetected changes in:'$NO_COLOR
+  echo $RED$FILES$NO_COLOR
   exit 1
 fi
 
-echo -e "${GREEN}✓ No changes left to commit${NO_COLOR}"
+echo $GREEN'✓ No changes left to commit'$NO_COLOR
+

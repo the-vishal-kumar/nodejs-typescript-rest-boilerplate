@@ -80,14 +80,17 @@
   "cross-os": {
     "pretty": {
       "darwin": "prettier --write 'src/**/*.ts'",
+      "linux": "prettier --write 'src/**/*.ts'",
       "win32": "prettier --write src/**/*.ts"
     },
     "pretty:check": {
       "darwin": "prettier --check 'src/**/*.ts'",
+      "linux": "prettier --check 'src/**/*.ts'",
       "win32": "prettier --check src/**/*.ts"
     },
     "lint": {
       "darwin": "eslint 'src/**/*.ts'",
+      "linux": "eslint 'src/**/*.ts'",
       "win32": "eslint src/**/*.ts"
     }
   }
