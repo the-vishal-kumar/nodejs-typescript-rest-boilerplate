@@ -24,7 +24,7 @@ describe('Auth endpoints', () => {
 //     // jest.setTimeout(10000); // Increase the timeout to 10 seconds
 
 //     mongod = await MongoMemoryServer.create();
-//     process.env['MONGO_URL'] = await mongod.getUri();
+//     process.env['MONGO_URI'] = await mongod.getUri();
 
 //     nodeApp = new NodeApp();
 //     console.log(`nodeApp===>`, nodeApp, `---nodeApp`);
@@ -70,8 +70,8 @@ describe('Auth endpoints', () => {
 
 // //     mongod = new MongoMemoryServer();
 // //     console.log(`mongod.getUri()===>`, await mongod.getUri(), `---mongod.getUri()`);
-// //     process.env['MONGO_URL'] = await mongod.getUri();
-// //     console.log(`process.env.MONGO_URL===>`, process.env.MONGO_URL, `---process.env.MONGO_URL`);
+// //     process.env['MONGO_URI'] = await mongod.getUri();
+// //     console.log(`process.env.MONGO_URI===>`, process.env.MONGO_URI, `---process.env.MONGO_URI`);
 
 // //     nodeServer = await nodeApp.init(Number(process.env.PORT));
 // //     mongoServer = await mongoApp.init();

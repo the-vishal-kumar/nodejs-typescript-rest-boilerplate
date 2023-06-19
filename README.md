@@ -19,11 +19,12 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
   [Read more...](./PROBLEM.md)
 
 ## Solution
+
 - There are four entities - User, Token, Loan, Repayment
 - Admin can signup, signin, approve a loan request, singoff, or reset password
 - User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
 
-   [Read more...](./SOLUTION.md)
+  [Read more...](./SOLUTION.md)
 
 ## Initial setup
 
@@ -63,16 +64,22 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
    ```bash
    npm run dev # start with nodemon
    ```
-   Pre-requisite: Update MONGO_URL in .env
+   Pre-requisite: Update MONGO_URI in .env
 -->
 
 1. Run server locally with docker-compose with either of the following commands:
    ```bash
+   npm run dev # rebuilds the docker image and then runs
+   ```
+   ```bash
+   npm start # runs the already built docker image
+   ```
+   <!-- ```bash
    npm run docker-compose # runs the already built docker image
    ```
    ```bash
    npm run docker-compose-build # rebuilds the docker image and then runs
-   ```
+   ``` -->
 
 ## Testing
 

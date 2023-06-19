@@ -14,9 +14,9 @@ const { logRequest, logResponse } = logRequestResponse;
 
 /**
  * Represents an Express application.
- * @class NodeApp
+ * @class NodeJs
  */
-class NodeApp {
+class NodeJs {
   expressApp: Express;
 
   constructor() {
@@ -80,7 +80,10 @@ class NodeApp {
           id: req.requestId,
           path: req.path,
           method: req.method,
-          payload: req.method === 'GET' || req.method === 'DELETE' ? req.query : req.body,
+          payload:
+            req.method === 'GET' || req.method === 'DELETE'
+              ? { ...req.query, ...req.params }
+              : { ...req.body, ...req.params },
           error,
         })}`,
         error,
@@ -95,16 +98,21 @@ class NodeApp {
    * @returns {Promise<Server>}
    */
   async init(port: number): Promise<Server> {
-    this.attachMiddlewares();
-    this.configureRoutes();
-    this.notFoundHandler();
-    this.errorHandler();
+    try {
+      this.attachMiddlewares();
+      this.configureRoutes();
+      this.notFoundHandler();
+      this.errorHandler();
 
-    const server = await this.expressApp.listen(port);
-    Logger.info(`🚀NodeJs server is listening at http://localhost:${port}`);
+      const server = await this.expressApp.listen(port);
+      Logger.info(`🚀NodeJs server is listening at http://localhost:${port}`);
 
-    return server;
+      return server;
+    } catch (err) {
+      Logger.error('Failed to start to NodeJs server:- ', err);
+      throw err;
+    }
   }
 }
 
-export default NodeApp;
+export default NodeJs;

@@ -1,6 +1,8 @@
 version: '3.8'
 services:
   node:
+    container_name: ntrb-nodejs
+    image: ntrb-nodejs-image
     build:
       context: ./
       dockerfile: ./src/app/node-server/Dockerfile
@@ -8,18 +10,12 @@ services:
       - mongo
     ports:
       - '3000:3000'
-    environment:
-      - MONGO_URL=mongodb://mongo:27017/ntrb
-    volumes:
-      - ./:/data/source-code
-    container_name: ntrb-nodejs
-    image: ntrb-nodejs-image
 
   mongo:
+    container_name: ntrb-mongodb
+    image: ntrb-mongodb-image
     build:
       context: ./
       dockerfile: ./src/app/mongo-server/Dockerfile
     ports:
-      - '27018:27017'
-    container_name: ntrb-mongodb
-    image: ntrb-mongodb-image
+      - '27017:27017'

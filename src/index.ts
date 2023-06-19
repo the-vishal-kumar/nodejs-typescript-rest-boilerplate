@@ -6,10 +6,11 @@ import { Logger } from './util';
 
 const main = async (): Promise<void> => {
   const mongoApp = new MongoApp();
-  const mongoServer = await mongoApp.init();
+  const uri = String(process.env.MONGO_URI);
+  const mongoServer = await mongoApp.init(uri);
 
   const nodeApp = new NodeApp();
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT);
   const nodeServer = await nodeApp.init(port);
 
   process.on('uncaughtException', err => {
