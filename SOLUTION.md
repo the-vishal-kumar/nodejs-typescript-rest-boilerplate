@@ -4,7 +4,7 @@
 
 1. Description
    - There are four entities - User, Token, Loan, Repayment
-   - Admin can signup, signin, apprive a loan request, singoff, or reset password
+   - Admin can signup, signin, approve a loan request, singoff, or reset password
    - User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
 
 1. Copy `.env.sample` to root directory as `.env`
@@ -17,7 +17,7 @@
     npm run docker-compose-build
     ```
 
-1. Import Postman collection and environment variable from `/Postman` directory to Postman applcation
+1. Import Postman collection and environment variable from `/Postman` directory to Postman application
 
 1. APIs List:
     1. Admin
