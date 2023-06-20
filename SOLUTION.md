@@ -10,17 +10,19 @@
 
 1. Copy `.env.sample` to root directory as `.env`
 
-   - (Optional) Replace the value of `JWT_SECRET_KEY`
+   - (Optional) Replace the value of `NEW_RELIC_LICENSE_KEY`. Generate key from [here](https://newrelic.com)
 
 1. Copy `docker-compose.sample.yml` to root directory as `docker-compose.yml`
-1. Go to terminal and run
+1. Go to terminal and execute the command to start the application
 
    ```bash
-   npm run dev # rebuilds the docker image and then runs
+   npm start
    ```
 
+1. Go to terminal and execute the command to run the tests
+
    ```bash
-   npm start # runs the already built docker image
+   npm test
    ```
 
 1. Import Postman collection and environment variable from `/Postman` directory to Postman application

@@ -181,7 +181,7 @@ In app's settings, set correctly all required config variables
 
       📦nodejs-typescript-rest-boilerplate
       ┣ 📂.husky
-      ┃ ┣ 📂_
+      ┃ ┣ 📂\_
       ┃ ┃ ┣ 📜.gitignore
       ┃ ┃ ┗ 📜husky.sh
       ┃ ┣ 📜commit-msg
@@ -195,6 +195,8 @@ In app's settings, set correctly all required config variables
       ┃ ┃ ┣ 📂mongo-server
       ┃ ┃ ┃ ┣ 📜Dockerfile
       ┃ ┃ ┃ ┗ 📜index.ts
+      ┃ ┃ ┣ 📂mongo-server-test
+      ┃ ┃ ┃ ┗ 📜Dockerfile
       ┃ ┃ ┣ 📂node-server
       ┃ ┃ ┃ ┣ 📜Dockerfile
       ┃ ┃ ┃ ┗ 📜index.ts
@@ -239,7 +241,8 @@ In app's settings, set correctly all required config variables
       ┃ ┃ ┗ 📜repayment.ts
       ┃ ┣ 📂test
       ┃ ┃ ┣ 📂e2e
-      ┃ ┃ ┃ ┗ 📜auth.e2e.test.ts
+      ┃ ┃ ┃ ┣ 📜auth.e2e.test.ts
+      ┃ ┃ ┃ ┗ 📜loan.e2e.test.ts
       ┃ ┃ ┗ 📂unit
       ┃ ┃ ┃ ┗ 📂util
       ┃ ┃ ┃ ┃ ┣ 📜enum.unit.test.ts
@@ -248,13 +251,13 @@ In app's settings, set correctly all required config variables
       ┃ ┣ 📂type
       ┃ ┃ ┣ 📂express
       ┃ ┃ ┃ ┗ 📜index.d.ts
-      ┃ ┃ ┣ 📜index.ts
       ┃ ┃ ┣ 📜Loan.ts
       ┃ ┃ ┣ 📜LoanRepayment.ts
       ┃ ┃ ┣ 📜Repayment.ts
       ┃ ┃ ┣ 📜ResponseHandler.ts
       ┃ ┃ ┣ 📜Token.ts
-      ┃ ┃ ┗ 📜User.ts
+      ┃ ┃ ┣ 📜User.ts
+      ┃ ┃ ┗ 📜index.ts
       ┃ ┣ 📂util
       ┃ ┃ ┣ 📜enum.ts
       ┃ ┃ ┣ 📜index.ts
@@ -273,16 +276,18 @@ In app's settings, set correctly all required config variables
       ┣ 📜.gitignore
       ┣ 📜.nvmrc
       ┣ 📜.prettierrc.json
+      ┣ 📜LICENSE
+      ┣ 📜PROBLEM.md
+      ┣ 📜README.md
+      ┣ 📜SOLUTION.md
       ┣ 📜docker-compose.sample.yml
+      ┣ 📜docker-compose.test.yml
       ┣ 📜docker-compose.yml
       ┣ 📜jest.config.js
-      ┣ 📜LICENSE
       ┣ 📜newrelic.js
       ┣ 📜newrelic_agent.log
       ┣ 📜package-lock.json
       ┣ 📜package.json
-      ┣ 📜PROBLEM.md
-      ┣ 📜README.md
       ┗ 📜tsconfig.json
 
 ## Project Specific Knowledge
