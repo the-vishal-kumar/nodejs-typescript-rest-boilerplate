@@ -1,13 +1,13 @@
 version: '3.8'
 services:
-  node:
-    container_name: ntrb-nodejs
-    image: ntrb-nodejs-image
+  node-test:
+    container_name: ntrb-nodejs-test
+    image: ntrb-nodejs-test-image
     build:
       context: ./
       dockerfile: ./src/app/node-server/Dockerfile
     depends_on:
-      - mongo
+      - mongo-test
     ports:
       - ${PORT}:${PORT}
     environment:
@@ -21,23 +21,16 @@ services:
       - NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED=${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED}
       - NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED=${NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED}
     networks:
-      - ntrb
+      - ntrb-test
 
-  mongo:
-    container_name: ntrb-mongodb
-    image: ntrb-mongodb-image
+  mongo-test:
+    container_name: ntrb-mongodb-test
+    image: ntrb-mongodb-test-image
     build:
       context: ./
-      dockerfile: ./src/app/mongo-server/Dockerfile
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo-data:/data/db
+      dockerfile: ./src/app/mongo-server-test/Dockerfile
     networks:
-      - ntrb
-
-volumes:
-  mongo-data:
+      - ntrb-test
 
 networks:
-  ntrb:
+  ntrb-test:

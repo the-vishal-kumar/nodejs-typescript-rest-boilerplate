@@ -35,8 +35,8 @@ export class UserLoanRoute {
 
   getLoans = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const loans = await this.loanController.getLoans({ user: req.user as IUserDocument });
-      handleSuccess({ res, data: { loans } });
+      const data = await this.loanController.getLoans({ user: req.user as IUserDocument });
+      handleSuccess({ res, data });
     } catch (error) {
       next(error);
     }

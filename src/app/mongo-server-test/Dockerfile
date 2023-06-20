@@ -4,6 +4,9 @@ FROM mongo:6
 # Set working directory
 WORKDIR /data/db
 
+# Remove existing data on every container start
+RUN rm -rf /data/db/*
+
 # Expose port
 EXPOSE 27017
 

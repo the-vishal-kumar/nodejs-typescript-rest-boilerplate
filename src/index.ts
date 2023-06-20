@@ -1,17 +1,18 @@
-import 'dotenv/config';
 import 'newrelic';
 
 import { NodeApp, MongoApp } from './app';
 import { Logger } from './util';
 
 const main = async (): Promise<void> => {
+  const mongoUri = String(process.env.MONGO_URI);
+  const nodePort = Number(process.env.PORT);
+
   const mongoApp = new MongoApp();
-  const uri = String(process.env.MONGO_URI);
-  const mongoServer = await mongoApp.init(uri);
+  const mongoServer = await mongoApp.init(mongoUri);
+  // if (process.env.NODE_ENV === 'test') await mongoServer.connection.db.dropDatabase();
 
   const nodeApp = new NodeApp();
-  const port = Number(process.env.PORT);
-  const nodeServer = await nodeApp.init(port);
+  const nodeServer = await nodeApp.init(nodePort);
 
   process.on('uncaughtException', err => {
     Logger.error('Uncaught Exception:- ', err);
@@ -24,7 +25,7 @@ const main = async (): Promise<void> => {
   });
 
   process.on('SIGTERM', async () => {
-    Logger.error('☠️SIGTERM signal received');
+    Logger.error('SIGTERM signal received');
 
     if (nodeServer && nodeServer.close) await nodeServer.close();
     Logger.error('NodeJs server closed');
@@ -34,7 +35,6 @@ const main = async (): Promise<void> => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-(async (): Promise<void> => {
+void (async (): Promise<void> => {
   await main();
 })();

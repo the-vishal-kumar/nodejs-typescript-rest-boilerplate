@@ -7,8 +7,7 @@ import cookieParser from 'cookie-parser';
 import { Server } from 'http';
 import { ResponseHandler, Logger } from '../../util';
 import { logRequestResponse } from '../../middleware';
-import { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute } from '../../route';
-import { RepaymentRoute } from '../../route/repayment';
+import { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute, RepaymentRoute } from '../../route';
 const { handleNotFound, handleError } = ResponseHandler;
 const { logRequest, logResponse } = logRequestResponse;
 
