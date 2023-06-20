@@ -5,7 +5,7 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
 - It contains a simple signup-signin mechanism.
 - It uses [Joi] for schema validation.
 - It can be run with or without [Docker] containerization software.
-- It has some tests written using [Jest] and [Supertest].
+- It has some end-to-end and unit tests written using [Jest].
 - It uses [ESLint], [Prettier], [CommitLint], [Husky] for maintaining code quality.
 - It uses [New Relic] for error logging, application performance monitoring, log monitoring.
 
@@ -32,6 +32,11 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
    ```bash
    git clone https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate.git
    ```
+1. Setup Docker and Docker Compose
+
+   - Install `docker` and `docker-compose` on your machine
+   - Copy `docker-compose.sample.yml` as `docker-compose.yml`
+
 1. Install dependencies using npm
 
    ```bash
@@ -41,51 +46,21 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
 
 1. Set environment variables
 
-   - Make a `.env` file
-   - Copy the contents of `.env.sample` to `.env`
-   - Put appropriate values to for empty variables
-     ```bash
-     JWT_SECRET_KEY="some-strong-jwt-secret-key | keep-it-safe"
-     NEW_RELIC_LICENSE_KEY="get-key-from-https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/"
-     ```
-
-1. Setup Docker
-
-   - Install `docker` and `docker-compose` on your machine
-   - When it's ready, please make a copy of `docker-compose.sample.yml` as `docker-compose.yml`
+   - Copy `.env.sample` to root directory as `.env`
+     - (Optional) Replace the value of `NEW_RELIC_LICENSE_KEY`. Generate key from [here](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/)
 
 ## Development
 
-<!--
-1. Run server locally without docker-compose with either of the following commands:
+1. Execute the command to start the application
    ```bash
    npm start
    ```
-   ```bash
-   npm run dev # start with nodemon
-   ```
-   Pre-requisite: Update MONGO_URI in .env
--->
-
-1. Run server locally with docker-compose with either of the following commands:
-   ```bash
-   npm run dev # rebuilds the docker image and then runs
-   ```
-   ```bash
-   npm start # runs the already built docker image
-   ```
-   <!-- ```bash
-   npm run docker-compose # runs the already built docker image
-   ```
-   ```bash
-   npm run docker-compose-build # rebuilds the docker image and then runs
-   ``` -->
 
 ## Testing
 
-1. Some unit tests are included in `src/test` directory. End-to-end tests will be included shortly
-1. Tests are run using [Jest] and [Supertest]
-1. Run tests
+1. Some end-to-end and unit tests are included in `src/test` directory
+1. Tests are run using [Jest]
+1. Execute the command to run the tests
    ```bash
    npm test
    ```
@@ -322,7 +297,6 @@ In app's settings, set correctly all required config variables
 [Husky]: https://typicode.github.io/husky/
 [Jest]: https://jestjs.io/
 [Heroku]: https://www.heroku.com/
-[Supertest]: https://github.com/ladjs/supertest
 [New Relic]: https://newrelic.com
 [JWT]: https://jwt.io/
 [Git]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git

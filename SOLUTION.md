@@ -8,22 +8,19 @@
    - Admin can signup, signin, approve a loan request, singoff, or reset password
    - User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
 
-1. Copy `.env.sample` to root directory as `.env`
+1. [Initial Setup](./README.md#initial-setup)
 
-   - (Optional) Replace the value of `NEW_RELIC_LICENSE_KEY`. Generate key from [here](https://newrelic.com)
+   1. Go to terminal and execute the command to start the application
 
-1. Copy `docker-compose.sample.yml` to root directory as `docker-compose.yml`
-1. Go to terminal and execute the command to start the application
+      ```bash
+      npm start
+      ```
 
-   ```bash
-   npm start
-   ```
+   1. Go to terminal and execute the command to run the tests
 
-1. Go to terminal and execute the command to run the tests
-
-   ```bash
-   npm test
-   ```
+      ```bash
+      npm test
+      ```
 
 1. Import Postman collection and environment variable from `/Postman` directory to Postman application
 
