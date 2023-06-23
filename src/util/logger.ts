@@ -6,7 +6,7 @@ const logFormatter = format.printf(info => {
   return `${timestamp} ${level}: ${stackOrMessage}`;
 });
 
-const logger = createLogger({
+export const config = {
   level: 'info',
   format: format.errors({ stack: true }),
   transports: [
@@ -16,6 +16,8 @@ const logger = createLogger({
   ],
   handleExceptions: true,
   handleRejections: true,
-});
+};
+
+const logger = createLogger(config);
 
 export default logger;
