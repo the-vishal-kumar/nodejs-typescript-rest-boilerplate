@@ -2,9 +2,9 @@
 
 ## Problem Statement
 
-- It is an app that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and“loan term”.
+- Create an application that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and “loan term”.
 - All the loans will be assumed to have a “weekly” repayment frequency.
-- After the loan is approved, the user must be able to submit the weekly loan repayments.
+- After the loan is approved by an admin, the user must be able to submit the weekly loan repayments with an amount greater than or equal to the scheduled repayment amount.
 - It can be a simplified repay functionality, which won’t need to check if the dates are correct but will just set the weekly amount to be repaid.
 
 ## Actions to implement
@@ -33,6 +33,6 @@
 
 1. **Customer add a repayments:**
 
-   - The customer can add a repayment with amount greater than or equal to the scheduled repayment amount
+   - The user/customer can add a repayment with amount greater than or equal to the scheduled repayment amount
    - Change the status of the scheduled repayment to PAID
    - If all the scheduled repayments connected to a loan are PAID, the status of loan is automatically changed to PAID

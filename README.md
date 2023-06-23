@@ -1,19 +1,21 @@
 # nodejs-typescript-rest-boilerplate
 
-A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework.
+A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework and uses [MongoDB] as a persistent layer.
 
-- It contains a simple signup-signin mechanism.
+- It contains an application that allows authenticated users to go through a loan application.
+- It uses [MongoDB] as a persistent database layer with [Mongoose] as a ODM.
 - It uses [Joi] for schema validation.
-- It can be run with or without [Docker] containerization software.
+- It can be run with [Docker] and [Docker-Compose] containerization software.
 - It has some end-to-end and unit tests written using [Jest].
 - It uses [ESLint], [Prettier], [CommitLint], [Husky] for maintaining code quality.
+- It uses [Winston] for logging.
 - It uses [New Relic] for error logging, application performance monitoring, log monitoring.
 
 ## Problem Statement
 
-- It is an app that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and“loan term”.
+- Create an application that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and “loan term”.
 - All the loans will be assumed to have a “weekly” repayment frequency.
-- After the loan is approved, the user must be able to submit the weekly loan repayments.
+- After the loan is approved by an admin, the user must be able to submit the weekly loan repayments with an amount greater than or equal to the scheduled repayment amount.
 - It can be a simplified repay functionality, which won’t need to check if the dates are correct but will just set the weekly amount to be repaid.
 
   [Read more...](./PROBLEM.md)
@@ -289,14 +291,18 @@ In app's settings, set correctly all required config variables
 [NodeJs]: https://nodejs.org/en
 [TypeScript]: https://www.typescriptlang.org/
 [Express]: https://expressjs.com/
+[MongoDB]: https://mongodb.com/
+[Mongoose]: https://mongoosejs.com/
 [Joi]: https://joi.dev/
 [Docker]: https://www.docker.com/
+[Docker-Compose]: https://docs.docker.com/compose/
 [ESLint]: https://eslint.org/
 [Prettier]: https://prettier.io/
 [CommitLint]: https://commitlint.js.org/
 [Husky]: https://typicode.github.io/husky/
 [Jest]: https://jestjs.io/
 [Heroku]: https://www.heroku.com/
+[Winston]: https://github.com/winstonjs/winston
 [New Relic]: https://newrelic.com
 [JWT]: https://jwt.io/
 [Git]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
