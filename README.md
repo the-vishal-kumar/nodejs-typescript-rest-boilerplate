@@ -1,5 +1,8 @@
 # nodejs-typescript-rest-boilerplate
 
+[![CI](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml)
+![Node.js](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)
+
 A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework and uses [MongoDB] as a persistent layer.
 
 - It contains an application that allows authenticated users to go through a loan application.
@@ -67,13 +70,24 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework 
    npm test
    ```
 
+### Continuous integration
+
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push to `main` and every pull request, on Node.js 22 (read from `.nvmrc`):
+
+1. `npm ci`
+1. `npm run pretty:check` and `npm run lint` (ESLint 9 flat config, type-aware rules)
+1. `npm run build`
+1. Starts the built API against a MongoDB 6 service container, then runs Jest (unit + e2e) with `--coverage` and uploads the report as a build artifact
+
+Coverage at the time of writing (Jest, 34 tests): **58% statements, 58% lines**. This counts only code loaded in the Jest process. The e2e suites call the API over HTTP in a separate process, so the routes, controllers and models they exercise are not instrumented and the number understates what the tests cover.
+
 ## API Documentation
 
 1. [Postman Collection](./Postman/nodejs-typescript-rest-boilerplate.postman_collection.json) : [Postman Environment](./Postman//nodejs-typescript-rest-boilerplate.postman_environment.json) - Import these files to Postman to know about the APIs schema
 
 ## Technology
 
-- Language - [NodeJs] | [TypeScript]
+- Language - [NodeJs] 22 | [TypeScript]
 - Framework - [Express]
 - Containerization Software - [Docker]
 - Version Control - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
