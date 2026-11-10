@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Check formatting
+        run: npm run pretty:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # The e2e tests call a running server on :5000, so start the built app
+      # against the Mongo service container before running Jest.
+      - name: Start API server
+        run: |
+          set -a; . ./.env.test; set +a
+          export MONGO_URI=mongodb://localhost:27017/ntrb-test
+          nohup node build/index.js > server.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:5000/ > /dev/null && exit 0
+            sleep 1
+          done
+          echo "API server did not start" >&2
+          cat server.log
+          exit 1
+
+      - name: Test with coverage
+        run: npx jest --coverage --coverageReporters=text --coverageReporters=text-summary --coverageReporters=lcov
+
+      - name: Show server log on failure
+        if: failure()
+        run: cat server.log || true
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
