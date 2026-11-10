@@ -249,7 +249,7 @@ In app's settings, set correctly all required config variables
       ┣ 📜.env
       ┣ 📜.env.sample
       ┣ 📜.env.test
-      ┣ 📜.eslintrc.json
+      ┣ 📜eslint.config.mjs
       ┣ 📜.gitignore
       ┣ 📜.nvmrc
       ┣ 📜.prettierrc.json

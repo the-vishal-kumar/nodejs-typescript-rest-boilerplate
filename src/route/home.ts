@@ -21,7 +21,7 @@ export default class HomeRoute {
       const data = fs.readFileSync(markdownPath, 'utf8');
       const html = marked(data);
       res.send(html);
-    } catch (_) {
+    } catch {
       res.send(`Hello world...👋\nWelcome to NodeJs TypeScript REST Boilerplate`);
     }
   };
