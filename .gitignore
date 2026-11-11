@@ -141,3 +141,6 @@ docker-compose.yml
 other/
 .vscode
 .DS_STORE
+
+# macOS
+.DS_Store
