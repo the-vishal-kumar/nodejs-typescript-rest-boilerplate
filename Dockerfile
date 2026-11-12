@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- build: install all deps and compile TypeScript ----
-FROM node:22.23.4-bookworm-slim AS build
+FROM node:26.13.0-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund --ignore-scripts
@@ -10,13 +10,13 @@ COPY src ./src
 RUN npm run build
 
 # ---- deps: production dependencies only ----
-FROM node:22.23.4-bookworm-slim AS deps
+FROM node:26.13.0-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund --ignore-scripts && npm cache clean --force
 
 # ---- runtime: no compiler, no dev deps, non-root ----
-FROM node:22.23.4-bookworm-slim AS runtime
+FROM node:26.13.0-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=3000
 # The app never runs npm, so drop it (and its bundled dependencies) from the image.
