@@ -1,19 +1,25 @@
 import { createLogger, format, transports } from 'winston';
 
-const logFormatter = format.printf(info => {
-  const { timestamp, level, stack, message } = info;
-  const stackOrMessage = stack || message;
-  return `${timestamp} ${level}: ${stackOrMessage}`;
-});
+/**
+ * One log line per event. JSON (the default outside development) is what log
+ * shippers expect; `pretty` keeps local output readable.
+ */
+const useJson = (process.env.LOG_FORMAT ?? (process.env.NODE_ENV === 'development' ? 'pretty' : 'json')) === 'json';
+
+const pretty = format.combine(
+  format.colorize(),
+  format.printf(info => {
+    const { timestamp, level, message, stack, ...meta } = info;
+    const rest = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    return `${timestamp} ${level}: ${stack || message}${rest}`;
+  }),
+);
 
 export const config = {
-  level: 'info',
-  format: format.errors({ stack: true }),
-  transports: [
-    new transports.Console({
-      format: format.combine(format.colorize(), format.simple(), format.timestamp(), logFormatter),
-    }),
-  ],
+  level: process.env.LOG_LEVEL || 'info',
+  defaultMeta: { service: 'ntrb-api' },
+  format: format.combine(format.errors({ stack: true }), format.timestamp(), useJson ? format.json() : pretty),
+  transports: [new transports.Console({ silent: process.env.LOG_SILENT === 'true' })],
   handleExceptions: true,
   handleRejections: true,
 };

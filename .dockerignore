@@ -1,3 +1,11 @@
 node_modules
-npm-debug.log
 build
+coverage
+.git
+.github
+.husky
+.env
+.env.*
+*.log
+Postman
+docs

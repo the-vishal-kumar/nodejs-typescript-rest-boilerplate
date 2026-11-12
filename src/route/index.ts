@@ -1,6 +1,7 @@
 import AuthRoute from './auth';
-import HomeRoute from './home';
+import DocsRoute from './docs';
+import HealthRoute, { Lifecycle } from './health';
 import { UserLoanRoute, AdminLoanRoute } from './loan';
 import { RepaymentRoute } from './repayment';
 
-export { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute, RepaymentRoute };
+export { AuthRoute, DocsRoute, HealthRoute, Lifecycle, UserLoanRoute, AdminLoanRoute, RepaymentRoute };

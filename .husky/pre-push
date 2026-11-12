@@ -1,7 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-
 STATUS=$(git status --porcelain | wc -l | xargs)
 FILES=$(git status --porcelain | sed -n "s;^.. \(.*\)$;\\\t\\\t\1\\\n;p")
 

@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { ILoan, ILoanDocument, ILoanModel } from '../type';
 import { Enum } from '../util';
 
@@ -13,7 +13,7 @@ const loanSchema = new Schema(
   {
     id: {
       type: Schema.Types.UUID,
-      default: uuid(),
+      default: (): string => randomUUID(),
       unique: true,
       index: true,
     },
@@ -45,6 +45,12 @@ const loanSchema = new Schema(
       enum: Object.values(RepaymentStatus),
       default: RepaymentStatus.Pending,
       index: true,
+    },
+    // Bumped by every repayment. A repayment only commits if the revision it read
+    // is still current, so two concurrent payments cannot both apply.
+    revision: {
+      type: Schema.Types.Number,
+      default: 0,
     },
     approvedBy: {
       type: Schema.Types.ObjectId,

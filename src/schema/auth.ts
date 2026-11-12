@@ -1,19 +1,31 @@
 import Joi from 'joi';
 
-const signupSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
-  password: Joi.string().trim().required(),
-  firstName: Joi.string().trim().required(),
-  lastName: Joi.string().trim(),
-});
+const email = Joi.string().trim().lowercase().email().max(254).required();
+// Length is checked on the raw value: passwords are not trimmed, a leading or
+// trailing space is part of the secret.
+const newPassword = Joi.string().min(8).max(128).required();
 
-const signinSchema = Joi.object({
-  email: Joi.string().trim().email().required(),
-  password: Joi.string().trim().required(),
-});
+const signupSchema = {
+  body: Joi.object({
+    email,
+    password: newPassword,
+    firstName: Joi.string().trim().min(1).max(100).required(),
+    lastName: Joi.string().trim().max(100),
+  }),
+};
 
-const resetPasswordSchema = Joi.object({
-  password: Joi.string().trim().required(),
-});
+const signinSchema = {
+  body: Joi.object({
+    email,
+    password: Joi.string().max(128).required(),
+  }),
+};
+
+const resetPasswordSchema = {
+  body: Joi.object({
+    currentPassword: Joi.string().max(128).required(),
+    password: newPassword,
+  }),
+};
 
 export { signupSchema, signinSchema, resetPasswordSchema };

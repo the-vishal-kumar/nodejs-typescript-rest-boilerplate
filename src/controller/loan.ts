@@ -1,71 +1,55 @@
-// import mongoose from 'mongoose';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { Loan, Repayment } from '../model';
 import { Logger, Money } from '../util/';
 import { ILoanRepayment, IUserDocument } from '../type';
-import { AuthorizationError, NotFoundError } from '../error';
+import { AuthorizationError, CustomError, NotFoundError } from '../error';
 import { RepaymentStatus } from '../model/loan';
 
 export default class LoanController {
   async requestLoan({ user, amount, term }: { user: IUserDocument; amount: number; term: number }): Promise<string> {
-    // const session = await mongoose.startSession();
-    try {
-      // session.startTransaction();
-      const loan = Loan.build({
-        id: uuid(),
-        userId: user._id,
-        amount,
-        term,
-      });
-      const repayments = Money.split(amount, term).map((dueAmount, weeklyInstallmentIndex) =>
-        Repayment.build({
-          id: uuid(),
-          loanId: loan._id,
-          dueAmount,
-          isLast: weeklyInstallmentIndex === term - 1,
-          dueDate: DateTime.utc()
-            .plus({ weeks: weeklyInstallmentIndex + 1 })
-            .startOf('day')
-            .toJSDate(),
-        }),
-      );
-      const promises: Promise<unknown>[] = [
-        loan.save({
-          // session
-        }),
-      ];
-      repayments.forEach(repayment => {
-        promises.push(
-          repayment.save({
-            // session
-          }),
-        );
-      });
-      await Promise.all(promises);
-      // await session.commitTransaction();
-      // await session.endSession();
+    const loan = Loan.build({
+      id: randomUUID(),
+      userId: user._id,
+      amount,
+      term,
+    });
+    const repayments = Money.split(amount, term).map((dueAmount, weeklyInstallmentIndex) => ({
+      id: randomUUID(),
+      loanId: loan._id,
+      dueAmount,
+      isLast: weeklyInstallmentIndex === term - 1,
+      dueDate: DateTime.utc()
+        .plus({ weeks: weeklyInstallmentIndex + 1 })
+        .startOf('day')
+        .toJSDate(),
+    }));
 
-      return loan.id;
+    // Without a replica set there are no multi-document transactions, so write
+    // the loan first and remove it again if the schedule cannot be written.
+    await loan.save();
+    try {
+      await Repayment.insertMany(repayments);
     } catch (error) {
-      // await session.abortTransaction();
-      // await session.endSession();
-      Logger.error('Unable to raise a loan request:- ', error);
-      throw new Error('Unable to raise a loan request');
+      Logger.error('Unable to write repayment schedule, rolling back loan', { loanId: loan.id, err: error });
+      await Repayment.deleteMany({ loanId: loan._id });
+      await Loan.deleteOne({ _id: loan._id });
+      throw error;
     }
+
+    return loan.id;
   }
 
   async getLoans({ user }: { user: IUserDocument }): Promise<ILoanRepayment[]> {
-    const loans = await Loan.find({ userId: user._id });
-    const repaymentPromises = loans.map(loan => Repayment.find({ loanId: loan._id }));
-    const repayments = await Promise.all(repaymentPromises);
-    return loans.map((loan, index) => ({
+    const loans = await Loan.find({ userId: user._id }).sort({ createdAt: 1 });
+    // One query for all schedules instead of one per loan.
+    const repayments = await Repayment.find({ loanId: { $in: loans.map(loan => loan._id) } }).sort({ dueDate: 1 });
+    return loans.map(loan => ({
       ...loan.toObject(),
       userId: user.id,
-      repayments: repayments[index].map(repayment => ({
-        ...repayment.toObject(),
-        loanId: loan.id,
-      })),
+      repayments: repayments
+        .filter(repayment => String(repayment.loanId) === String(loan._id))
+        .map(repayment => ({ ...repayment.toObject(), loanId: loan.id })),
     }));
   }
 
@@ -73,7 +57,7 @@ export default class LoanController {
     const loan = await Loan.findOne({ id });
     if (!loan) throw new NotFoundError('Loan not found');
     if (loan.userId.toString() !== user._id.toString()) throw new AuthorizationError();
-    const repayments = await Repayment.find({ loanId: loan._id });
+    const repayments = await Repayment.find({ loanId: loan._id }).sort({ dueDate: 1 });
     return {
       ...loan.toObject(),
       userId: user.id,
@@ -84,13 +68,23 @@ export default class LoanController {
     };
   }
 
-  async approveLoan({ adminId, id }: { adminId: string; id: string }): Promise<void> {
+  async approveLoan({ admin, id }: { admin: IUserDocument; id: string }): Promise<void> {
     const loan = await Loan.findOne({ id });
     if (!loan) throw new NotFoundError('Loan not found');
-    if (loan.userId.toString() === adminId) throw new AuthorizationError('Cannot approve your own loan request');
-    if (loan.status !== RepaymentStatus.Pending)
+    // Compare Mongo ids: `admin.id` is the public UUID and never matched
+    // `loan.userId`, which let an admin approve their own loan.
+    if (loan.userId.toString() === admin._id.toString()) {
+      throw new AuthorizationError('Cannot approve your own loan request');
+    }
+    if (loan.status !== RepaymentStatus.Pending) {
       throw new AuthorizationError('Cannot approve an already approved or paid loan');
-    loan.status = RepaymentStatus.Approved;
-    await loan.save();
+    }
+
+    // Conditional update: two admins approving at once cannot both succeed.
+    const result = await Loan.updateOne(
+      { _id: loan._id, status: RepaymentStatus.Pending },
+      { $set: { status: RepaymentStatus.Approved, approvedBy: admin._id } },
+    );
+    if (result.modifiedCount !== 1) throw new CustomError('Loan was changed by another request, retry', 409);
   }
 }

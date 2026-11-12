@@ -1,12 +1,13 @@
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import jsonwebtoken from 'jsonwebtoken';
-import { AuthenticationError, CustomError } from '../error';
-import { Password } from '../util';
+import { getConfig } from '../config';
+import { AuthenticationError, AuthorizationError, CustomError } from '../error';
+import { hashToken, Password } from '../util';
 import { Token, User } from '../model';
-const { sign } = jsonwebtoken;
-const { JWT_SECRET_KEY } = process.env;
 import { IToken, IUser } from '../type';
+
+const INVALID_CREDENTIALS = 'Invalid email or password';
 
 export default class AuthController {
   async signup({
@@ -28,7 +29,7 @@ export default class AuthController {
     if (userExists) throw new CustomError('User already exists', 409);
 
     const userToBeSaved: Partial<IUser> = {
-      id: uuid(),
+      id: randomUUID(),
       email: userEmail,
       firstName: firstName,
       password: await Password.hashPassword(password),
@@ -36,50 +37,85 @@ export default class AuthController {
     if (lastName) userToBeSaved.lastName = lastName;
     if (isAdmin) userToBeSaved.isAdmin = true;
 
+    // A concurrent sign-up with the same email still fails on the unique
+    // index; the error handler maps that to 409.
     const user = User.build(userToBeSaved);
     await user.save();
   }
 
-  async signin({ email, password, isAdmin }: { email: string; password: string; isAdmin?: boolean }): Promise<string> {
+  /**
+   * Checks the password first and the role second, so a caller cannot learn
+   * whether an email belongs to an admin without knowing its password.
+   */
+  async signin({
+    email,
+    password,
+    requireAdmin,
+  }: {
+    email: string;
+    password: string;
+    requireAdmin?: boolean;
+  }): Promise<string> {
+    const { jwtSecretKey, userTokenTtlMinutes, adminTokenTtlMinutes } = getConfig();
     const userEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: userEmail });
-    if (!user) throw new AuthenticationError('Invalid email or password');
+    if (!user || user.isDeleted) {
+      // Spend the same scrypt time as a real check so response timing does
+      // not reveal which emails are registered.
+      await Password.hashPassword(password);
+      throw new AuthenticationError(INVALID_CREDENTIALS);
+    }
 
     const passwordMatches = await Password.comparePassword(user.password, password);
-    if (!passwordMatches) throw new AuthenticationError('Invalid email or password');
+    if (!passwordMatches) throw new AuthenticationError(INVALID_CREDENTIALS);
+    if (requireAdmin && !user.isAdmin) throw new AuthorizationError('Admin access required');
 
-    const userId = user._id;
-    let accessToken = sign({ userId }, JWT_SECRET_KEY as string, { expiresIn: '1d' });
-    if (isAdmin) accessToken = sign({ userId }, JWT_SECRET_KEY as string, { expiresIn: '20m' });
+    const ttlMinutes = requireAdmin ? adminTokenTtlMinutes : userTokenTtlMinutes;
+    const accessToken = jsonwebtoken.sign({ userId: String(user._id) }, jwtSecretKey, {
+      algorithm: 'HS256',
+      expiresIn: ttlMinutes * 60,
+      jwtid: randomUUID(),
+    });
 
     const tokenToBeSaved: Partial<IToken> = {
-      id: uuid(),
-      userId,
-      accessToken,
-      validTill: DateTime.utc().plus({ minutes: 20 }).toJSDate(),
+      id: randomUUID(),
+      userId: user._id,
+      accessToken: hashToken(accessToken),
+      validTill: DateTime.utc().plus({ minutes: ttlMinutes }).toJSDate(),
     };
-    const token = Token.build(tokenToBeSaved);
-    await token.save();
+    await Token.build(tokenToBeSaved).save();
 
-    return token.accessToken;
+    return accessToken;
   }
 
   async signoff(tokenId: string): Promise<void> {
     await Token.deleteOne({ _id: tokenId });
   }
 
+  /**
+   * Requires the current password, so a stolen access token alone cannot take
+   * over the account, and ends every other session of the user.
+   */
   async resetPassword({
     userId,
+    tokenId,
     storedPassword,
-    suppliedPassword,
+    currentPassword,
+    newPassword,
   }: {
     userId: string;
+    tokenId: string;
     storedPassword: string;
-    suppliedPassword: string;
+    currentPassword: string;
+    newPassword: string;
   }): Promise<void> {
-    const newPassword = await Password.hashPassword(suppliedPassword);
-    const passwordMatches = await Password.comparePassword(storedPassword, suppliedPassword);
-    if (passwordMatches) throw new CustomError('New password cannot be same as Old password', 403);
-    await User.updateOne({ _id: userId }, { password: newPassword });
+    const currentMatches = await Password.comparePassword(storedPassword, currentPassword);
+    if (!currentMatches) throw new AuthenticationError('Current password is incorrect');
+
+    const sameAsOld = await Password.comparePassword(storedPassword, newPassword);
+    if (sameAsOld) throw new CustomError('New password cannot be same as Old password', 403);
+
+    await User.updateOne({ _id: userId }, { password: await Password.hashPassword(newPassword) });
+    await Token.deleteMany({ userId, _id: { $ne: tokenId } });
   }
 }

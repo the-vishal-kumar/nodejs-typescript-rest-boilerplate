@@ -1,125 +1,47 @@
+import { randomUUID } from 'node:crypto';
 import { Request, Response, NextFunction } from 'express';
-import { v4 as uuid } from 'uuid';
 import { Logger } from '../util';
 
-/**
- * Interface for the log entry containing request and response information.
- */
-interface LogEntry {
-  id: string;
-  path: string;
-  method: string;
-  payload: object;
-  statusCode?: number;
-  statusMessage?: string;
-  contentLength?: number;
-}
+const REQUEST_ID = /^[\w.-]{1,128}$/;
 
 /**
- * Middleware function to log the details of incoming requests.
- * @param {Request} req - The Express request object.
- * @param {Response} res - The Express response object.
- * @param {NextFunction} next - The next middleware function.
+ * Assigns a request id (reusing a well-formed incoming `X-Request-Id`, so ids
+ * can be traced across services), echoes it on the response and writes one
+ * structured access-log line when the response finishes or is aborted.
+ *
+ * Bodies are not logged here: they can hold passwords. The error handler logs
+ * a redacted body when something fails.
  */
 const logRequest = (req: Request, res: Response, next: NextFunction): void => {
-  req.requestId = uuid();
+  const incoming = req.get('x-request-id');
+  req.requestId = incoming && REQUEST_ID.test(incoming) ? incoming : randomUUID();
+  res.setHeader('X-Request-Id', req.requestId);
 
-  const logEntry: LogEntry = {
-    id: req.requestId,
-    path: req.path,
-    method: req.method,
-    payload:
-      req.method === 'GET' || req.method === 'DELETE'
-        ? { ...req.query, ...req.params }
-        : { ...req.body, ...req.params },
-  };
+  const startedAt = process.hrtime.bigint();
+  let logged = false;
 
-  Logger.info(`Request:- ${JSON.stringify(logEntry)}`);
-
-  next();
-};
-
-/**
- * Middleware function to log the details of outgoing responses.
- * @param {Request} req - The Express request object.
- * @param {Response} res - The Express response object.
- * @param {NextFunction} next - The next middleware function.
- */
-const logResponse = (req: Request, res: Response, next: NextFunction): void => {
-  const requestId = req.requestId;
-  /**
-   * Cleanup function to remove event listeners.
-   */
-  const cleanup = (): void => {
-    res.removeListener('finish', logFn);
-    res.removeListener('close', abortFn);
-    res.removeListener('error', errorFn);
-  };
-
-  /**
-   * Event listener for successful response.
-   */
-  const logFn = (): void => {
-    cleanup();
-    const logEntry: LogEntry = {
-      id: requestId,
-      path: req.path,
+  const log = (outcome: 'finished' | 'aborted'): void => {
+    if (logged) return;
+    logged = true;
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+    const entry = {
+      requestId: req.requestId,
       method: req.method,
-      payload:
-        req.method === 'GET' || req.method === 'DELETE'
-          ? { ...req.query, ...req.params }
-          : { ...req.body, ...req.params },
+      path: req.originalUrl.split('?')[0],
       statusCode: res.statusCode,
-      statusMessage: res.statusMessage,
-      contentLength: parseInt(res.get('Content-Length') || '0', 10),
+      durationMs: Math.round(durationMs * 10) / 10,
+      contentLength: Number(res.get('Content-Length') || 0),
+      userAgent: req.get('user-agent'),
     };
-    Logger.info(`Response:- ${JSON.stringify(logEntry)}`);
+    if (outcome === 'aborted') Logger.warn('request aborted', entry);
+    else if (res.statusCode >= 500) Logger.error('request completed', entry);
+    else Logger.info('request completed', entry);
   };
 
-  /**
-   * Event listener for aborted response.
-   */
-  const abortFn = (): void => {
-    cleanup();
-    Logger.warn(
-      `Response aborted:- ${JSON.stringify({
-        id: requestId,
-        path: req.path,
-        method: req.method,
-        payload:
-          req.method === 'GET' || req.method === 'DELETE'
-            ? { ...req.query, ...req.params }
-            : { ...req.body, ...req.params },
-      })}`,
-    );
-  };
-
-  /**
-   * Event listener for response error.
-   * @param {Error} err - The error object.
-   */
-  const errorFn = (err: Error): void => {
-    cleanup();
-    Logger.error(
-      `Response error:- ${JSON.stringify({
-        id: requestId,
-        path: req.path,
-        method: req.method,
-        payload:
-          req.method === 'GET' || req.method === 'DELETE'
-            ? { ...req.query, ...req.params }
-            : { ...req.body, ...req.params },
-        err,
-      })}`,
-      err,
-    );
-  };
-
-  res.on('finish', logFn);
-  res.on('close', abortFn);
-  res.on('error', errorFn);
+  res.on('finish', () => log('finished'));
+  res.on('close', () => log(res.writableFinished ? 'finished' : 'aborted'));
 
   next();
 };
 
-export { logRequest, logResponse };
+export { logRequest };

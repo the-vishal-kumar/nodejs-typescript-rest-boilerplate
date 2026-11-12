@@ -1,40 +1,8 @@
-import 'newrelic';
+// The New Relic agent must load before anything it instruments, and only when
+// a licence key is configured (without one it just logs errors).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+if (process.env.NEW_RELIC_LICENSE_KEY) require('newrelic');
 
-import { NodeApp, MongoApp } from './app';
-import { Logger } from './util';
+import { start } from './server';
 
-const main = async (): Promise<void> => {
-  const mongoUri = String(process.env.MONGO_URI);
-  const nodePort = Number(process.env.PORT);
-
-  const mongoApp = new MongoApp();
-  const mongoServer = await mongoApp.init(mongoUri);
-  // if (process.env.NODE_ENV === 'test') await mongoServer.connection.db.dropDatabase();
-
-  const nodeApp = new NodeApp();
-  const nodeServer = await nodeApp.init(nodePort);
-
-  process.on('uncaughtException', err => {
-    Logger.error('Uncaught Exception:- ', err);
-    process.exit(1);
-  });
-
-  process.on(`unhandledRejection`, err => {
-    Logger.error(`Unhandled Rejection:- `, err);
-    process.exit(2);
-  });
-
-  process.on('SIGTERM', async () => {
-    Logger.error('SIGTERM signal received');
-
-    if (nodeServer && nodeServer.close) await nodeServer.close();
-    Logger.error('NodeJs server closed');
-
-    if (mongoServer && mongoServer.disconnect) await mongoServer.disconnect();
-    Logger.error('Mongo database disconnected');
-  });
-};
-
-void (async (): Promise<void> => {
-  await main();
-})();
+void start();

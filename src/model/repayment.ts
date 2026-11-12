@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { IRepayment, IRepaymentDocument, IRepaymentModel } from '../type';
 import { RepaymentStatus } from './loan';
 
@@ -7,13 +7,13 @@ const repaymentSchema = new Schema(
   {
     id: {
       type: Schema.Types.UUID,
-      default: uuid(),
+      default: (): string => randomUUID(),
       unique: true,
       index: true,
     },
     loanId: {
       type: Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Loan',
       required: true,
       index: true,
     },

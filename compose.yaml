@@ -1,0 +1,31 @@
+# Local stack: cp .env.sample .env && docker compose up --build
+name: ntrb
+
+services:
+  api:
+    build: .
+    image: ntrb-api:local
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/ntrb
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+  mongo:
+    image: mongo:8.2
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

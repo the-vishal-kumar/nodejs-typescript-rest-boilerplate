@@ -1,8 +1,13 @@
 import Joi from 'joi';
+import { money } from './money';
 
-const makePaymentSchema = Joi.object({
-  id: Joi.string().trim().uuid().required(),
-  amount: Joi.number().positive().required(),
-});
+const makePaymentSchema = {
+  params: Joi.object({
+    id: Joi.string().trim().uuid().required(),
+  }),
+  body: Joi.object({
+    amount: money().required(),
+  }),
+};
 
 export { makePaymentSchema };

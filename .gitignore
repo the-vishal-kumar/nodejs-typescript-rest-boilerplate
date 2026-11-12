@@ -134,9 +134,6 @@ yarn.lock
 build
 data
 
-# Docker configurations
-docker-compose.yml
-
 # System specifics
 other/
 .vscode

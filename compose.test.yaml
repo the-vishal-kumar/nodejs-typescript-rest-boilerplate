@@ -1,0 +1,31 @@
+# Unit + e2e tests with only Docker installed: make test
+name: ntrb-test
+
+services:
+  tests:
+    image: node:22.23.4-bookworm-slim
+    working_dir: /src
+    user: '${UID:-1000}:${GID:-1000}'
+    environment:
+      HOME: /tmp
+      MONGO_URI: mongodb://mongo:27017/ntrb-test
+      # The MongoDB driver loads `os` with a dynamic import(), which Jest's
+      # sandbox only supports with this flag; without it the driver sends an
+      # empty handshake and the server rejects the connection.
+      NODE_OPTIONS: --experimental-vm-modules
+    volumes:
+      - ./:/src
+    command: ['sh', '-c', 'npm ci --no-audit --no-fund --ignore-scripts && npx jest --coverage']
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8.2
+    tmpfs:
+      - /data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 2s
+      timeout: 5s
+      retries: 30

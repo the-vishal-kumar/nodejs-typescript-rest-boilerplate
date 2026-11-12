@@ -1,20 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthenticationError, AuthorizationError } from '../error';
-import { User } from '../model';
-import { IUserDocument } from '../type';
 
-const validateIsAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  if (!req.tokenId) {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) return next(new AuthenticationError());
-
-    req.user = user;
-  }
-
-  if (!(req.user as IUserDocument).isAdmin) return next(new AuthorizationError());
-
+/**
+ * Must run after validateAccessToken. Admin sign-in checks the role inside the
+ * controller, after the password, so this middleware never looks a user up by
+ * email (that leaked whether an account is an admin without a password).
+ */
+const validateIsAdmin = (req: Request, _res: Response, next: NextFunction): void => {
+  if (!req.user) return next(new AuthenticationError('Missing access token'));
+  if (!req.user.isAdmin) return next(new AuthorizationError('Admin access required'));
   return next();
 };
 

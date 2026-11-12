@@ -15,20 +15,20 @@ concurrency:
 
 jobs:
   test:
-    name: Lint, build and test
-    runs-on: ubuntu-latest
+    name: Lint, type-check, test
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     services:
       mongo:
-        image: mongo:6
+        image: mongo:8.2
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
           --health-interval 5s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 20
 
     steps:
       - uses: actions/checkout@v4
@@ -38,39 +38,28 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
 
-      - name: Check formatting
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Prettier
         run: npm run pretty:check
 
-      - name: Lint
+      - name: ESLint
         run: npm run lint
 
-      - name: Build
+      - name: Type-check and build
         run: npm run build
 
-      # The e2e tests call a running server on :5000, so start the built app
-      # against the Mongo service container before running Jest.
-      - name: Start API server
-        run: |
-          set -a; . ./.env.test; set +a
-          export MONGO_URI=mongodb://localhost:27017/ntrb-test
-          nohup node build/index.js > server.log 2>&1 &
-          for _ in $(seq 1 30); do
-            curl -fsS http://localhost:5000/ > /dev/null && exit 0
-            sleep 1
-          done
-          echo "API server did not start" >&2
-          cat server.log
-          exit 1
-
-      - name: Test with coverage
-        run: npx jest --coverage --coverageReporters=text --coverageReporters=text-summary --coverageReporters=lcov
-
-      - name: Show server log on failure
-        if: failure()
-        run: cat server.log || true
+      # e2e suites drive the app in-process (supertest) against the Mongo
+      # service, so coverage includes routes, controllers and models.
+      - name: Unit and e2e tests with coverage
+        env:
+          MONGO_URI: mongodb://localhost:27017/ntrb-test
+          # Lets Jest's sandbox run the MongoDB driver's dynamic import('os').
+          NODE_OPTIONS: --experimental-vm-modules
+        run: npx jest --coverage --ci
 
       - name: Upload coverage report
         if: always()
@@ -79,3 +68,46 @@ jobs:
           name: coverage
           path: coverage/
           if-no-files-found: ignore
+
+  image:
+    name: Docker image, smoke test, CVE scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker compose build api
+
+      - name: Start stack and wait for health checks
+        run: |
+          cp .env.sample .env
+          docker compose up -d --wait --wait-timeout 120
+
+      - name: Smoke test
+        run: |
+          curl -fsS http://localhost:3000/health/ready
+          curl -fsS -o /dev/null http://localhost:3000/docs/
+          curl -fsS -X POST http://localhost:3000/auth/signup -H 'Content-Type: application/json' \
+            -d '{"email":"smoke@example.com","password":"password123","firstName":"Smoke"}'
+          curl -fsS -X POST http://localhost:3000/auth/signin -H 'Content-Type: application/json' \
+            -d '{"email":"smoke@example.com","password":"password123"}' | grep -q accessToken
+
+      - name: Graceful shutdown exits 0
+        run: |
+          docker compose stop -t 15 api
+          test "$(docker compose ps -a api --format '{{.ExitCode}}')" = "0"
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Trivy scan (fixable HIGH/CRITICAL fail the build)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.70.0 \
+            image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress ntrb-api:local
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

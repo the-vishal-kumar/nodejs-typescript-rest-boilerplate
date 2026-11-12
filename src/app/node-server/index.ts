@@ -1,117 +1,58 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import compression from 'compression';
 import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import { Server } from 'http';
-import { ResponseHandler, Logger } from '../../util';
-import { logRequestResponse } from '../../middleware';
-import { HomeRoute, AuthRoute, UserLoanRoute, AdminLoanRoute, RepaymentRoute } from '../../route';
-const { handleNotFound, handleError } = ResponseHandler;
-const { logRequest, logResponse } = logRequestResponse;
+import { AppConfig } from '../../config';
+import { ResponseHandler } from '../../util';
+import { createRateLimiters, errorHandler, logRequest } from '../../middleware';
+import {
+  AuthRoute,
+  DocsRoute,
+  HealthRoute,
+  Lifecycle,
+  UserLoanRoute,
+  AdminLoanRoute,
+  RepaymentRoute,
+} from '../../route';
+const { handleNotFound } = ResponseHandler;
 
 /**
- * Represents an Express application.
- * @class NodeJs
+ * Builds the Express application without binding a port, so tests can drive
+ * it in-process with supertest and the entrypoint owns the server lifecycle.
  */
-class NodeJs {
-  expressApp: Express;
+export const createApp = (config: AppConfig, lifecycle: Lifecycle = { isShuttingDown: () => false }): Express => {
+  const app = express();
+  const limiters = createRateLimiters(config);
 
-  constructor() {
-    this.expressApp = express();
-  }
+  app.set('trust proxy', config.trustProxy);
+  app.disable('x-powered-by');
 
-  /**
-   * Configures the middleware(s) for the Express application.
-   * @returns {void}
-   */
-  attachMiddlewares(): void {
-    this.expressApp.use(cors());
-    this.expressApp.use(compression());
-    // parse application/x-www-form-urlencoded
-    this.expressApp.use(bodyParser.urlencoded({ extended: false }));
-    // parse application/json
-    this.expressApp.use(bodyParser.json());
-    this.expressApp.use(cookieParser());
-    this.expressApp.use(helmet());
+  // Probes come first: no logging noise, no rate limit, no body parsing.
+  app.use('/health', new HealthRoute(lifecycle).router);
 
-    this.expressApp.use(logRequest);
-    this.expressApp.use(logResponse);
-  }
+  app.use(logRequest);
+  app.use(helmet());
+  app.use(cors({ origin: config.corsOrigins === '*' ? '*' : config.corsOrigins }));
+  app.use(compression());
+  app.use(express.json({ limit: '10kb' }));
 
-  /**
-   * Configures the routes for the Express application.
-   * @returns {void}
-   */
-  configureRoutes(): void {
-    const homeRoute = new HomeRoute();
-    this.expressApp.use('/', homeRoute.router);
+  app.get('/', (_req: Request, res: Response) => res.redirect('/docs'));
+  app.use('/docs', new DocsRoute().router);
 
-    const authRoute = new AuthRoute();
-    this.expressApp.use('/auth', authRoute.router);
+  app.use('/auth/signup', limiters.auth);
+  app.use('/auth/signin', limiters.auth);
+  app.use('/auth/password', limiters.auth);
+  app.use(limiters.api);
 
-    const userLoanRoute = new UserLoanRoute();
-    this.expressApp.use('/loan', userLoanRoute.router);
+  app.use('/auth', new AuthRoute(config).router);
+  app.use('/loan', new UserLoanRoute().router);
+  app.use('/loan', new AdminLoanRoute().router);
+  app.use('/loan', new RepaymentRoute().router);
 
-    const adminLoanRoute = new AdminLoanRoute();
-    this.expressApp.use('/loan', adminLoanRoute.router);
+  app.use((_req: Request, res: Response) => handleNotFound({ res }));
+  app.use(errorHandler);
 
-    const repaymentRoute = new RepaymentRoute();
-    this.expressApp.use('/loan', repaymentRoute.router);
-  }
+  return app;
+};
 
-  notFoundHandler(): void {
-    this.expressApp.use((_req: Request, res: Response) => {
-      handleNotFound({ res });
-    });
-  }
-
-  /**
-   * Configures the error logging middleware for the Express application.
-   * @returns {void}
-   */
-  errorHandler(): void {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.expressApp.use((error: Error, req: Request, res: Response, _next: NextFunction) => {
-      Logger.error(
-        `Error occurred:- ${JSON.stringify({
-          id: req.requestId,
-          path: req.path,
-          method: req.method,
-          payload:
-            req.method === 'GET' || req.method === 'DELETE'
-              ? { ...req.query, ...req.params }
-              : { ...req.body, ...req.params },
-          error,
-        })}`,
-        error,
-      );
-      handleError({ res, error });
-    });
-  }
-
-  /**
-   * Starts the server and listens on the specified port.
-   * @param {number} port - The port number to listen on.
-   * @returns {Promise<Server>}
-   */
-  async init(port: number): Promise<Server> {
-    try {
-      this.attachMiddlewares();
-      this.configureRoutes();
-      this.notFoundHandler();
-      this.errorHandler();
-
-      const server = await this.expressApp.listen(port);
-      Logger.info(`🚀NodeJs server is listening at http://localhost:${port}`);
-
-      return server;
-    } catch (err) {
-      Logger.error('Failed to start to NodeJs server:- ', err);
-      throw err;
-    }
-  }
-}
-
-export default NodeJs;
+export default createApp;

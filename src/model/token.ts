@@ -1,12 +1,12 @@
 import { model, Schema } from 'mongoose';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { IToken, ITokenDocument, ITokenModel } from '../type';
 
 const tokenSchema = new Schema(
   {
     id: {
       type: Schema.Types.UUID,
-      default: uuid(),
+      default: (): string => randomUUID(),
       unique: true,
       index: true,
     },
@@ -21,6 +21,8 @@ const tokenSchema = new Schema(
     //   required: true,
     //   index: true,
     // },
+    // SHA-256 of the issued JWT. The raw token is never stored, so a database
+    // leak does not hand out live sessions.
     accessToken: {
       type: Schema.Types.String,
       required: true,
@@ -30,6 +32,8 @@ const tokenSchema = new Schema(
     validTill: {
       type: Schema.Types.Date,
       required: true,
+      // MongoDB deletes the session document once it has expired.
+      expires: 0,
     },
     createdAt: Schema.Types.Number,
     updatedAt: Schema.Types.Number,

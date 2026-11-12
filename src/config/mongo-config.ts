@@ -1,7 +1,7 @@
 export default {
   dbOptions: {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    connectTimeoutMS: 1000,
+    // Fail start-up and readiness quickly instead of hanging when MongoDB is down.
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
   },
 };

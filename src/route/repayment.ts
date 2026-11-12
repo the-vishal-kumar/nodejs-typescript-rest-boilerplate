@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import { validateAccessToken, validateSchema } from '../middleware';
 import { RepaymentSchema } from '../schema';
 import { RepaymentController } from '../controller';
@@ -18,17 +18,12 @@ export class RepaymentRoute {
   }
 
   private initRoutes(): void {
-    this.router.put('/:id/repayment', validateSchema(makePaymentSchema), validateAccessToken, this.makePayment);
+    this.router.put('/:id/repayment', validateAccessToken, validateSchema(makePaymentSchema), this.makePayment);
   }
 
-  makePayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const { amount } = req.body;
-      await this.repaymentController.makePayment({ user: req.user as IUserDocument, id, amount });
-      handleSuccess({ res, statusCode: 204 });
-    } catch (error) {
-      next(error);
-    }
+  makePayment = async (req: Request, res: Response): Promise<void> => {
+    const { amount } = req.body;
+    await this.repaymentController.makePayment({ user: req.user as IUserDocument, id: String(req.params.id), amount });
+    handleSuccess({ res, statusCode: 204 });
   };
 }

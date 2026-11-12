@@ -1,12 +1,12 @@
 import { model, Schema } from 'mongoose';
-import { v4 as uuid } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { IUser, IUserDocument, IUserModel } from '../type';
 
 const userSchema = new Schema(
   {
     id: {
       type: Schema.Types.UUID,
-      default: uuid(),
+      default: (): string => randomUUID(),
       unique: true,
       index: true,
     },
