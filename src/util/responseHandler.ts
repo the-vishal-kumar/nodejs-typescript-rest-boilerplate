@@ -13,6 +13,15 @@ export default class ResponseHandler {
 
     if (Array.isArray(data)) return data.map(item => this.removeSensitiveData(item));
 
+    // Values that define their own JSON form (Date, UUID, ObjectId, Mongoose
+    // documents) must use it: copying their own keys would send internals such
+    // as a UUID's byte buffer instead of the string.
+    const { toJSON } = data as { toJSON?: unknown };
+    if (typeof toJSON === 'function') {
+      const json: unknown = toJSON.call(data);
+      return json === data ? json : this.removeSensitiveData(json);
+    }
+
     const sanitizedData: unknown = {};
     for (const key in data) {
       if (key !== '_id' && key !== 'password' && key !== '__v') {
