@@ -102,4 +102,4 @@ Configuration lives in [`.env.sample`](./.env.sample); `make up` copies it to `.
 
 ## License
 
-[GPL-3.0-or-later](./LICENSE), Vishal Kumar.
+[MIT](./LICENSE), Vishal Kumar.

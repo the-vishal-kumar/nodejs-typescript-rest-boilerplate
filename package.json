@@ -21,7 +21,7 @@
     "url": "git+https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate.git"
   },
   "author": "Vishal Kumar <vishal194kumar@gmail.com>",
-  "license": "GPL-3.0-or-later",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/issues"
   },
