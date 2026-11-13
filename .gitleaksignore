@@ -1,4 +1,4 @@
-# Findings in 2023 history only: removed from the tree; the sample JWTs expired in 2023 and the New Relic key was revoked.
+# Findings in 2023 history only, all removed from the tree: expired sample JWTs and a New Relic key that is no longer used by this project.
 7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:57
 7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:83
 7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:88
