@@ -20,8 +20,11 @@
 #   VUS         concurrent virtual users (default 20)
 #   API_SERVICE compose service of the API (default api)
 #   API_IMAGE   image to size (default: the API service's image)
-#   LOC_DIRS    source directories to count (default src)
-#   LOC_EXCLUDE regex of paths to leave out of the count (default: tests)
+#   LOC_DIRS    source directories to count, including migrations (default src)
+#   LOC_EXCLUDE regex of paths to leave out of the count (default: tests);
+#               the shared OpenAPI contract is never counted
+#   Lines of code count only TypeScript, Go and SQL, so embedded assets and
+#   the contract JSON do not distort the comparison.
 #   GO_MAIN     Go only: main package to count dependencies for
 set -euo pipefail
 
@@ -33,7 +36,7 @@ DURATION=${DURATION:-60s}
 VUS=${VUS:-20}
 API_SERVICE=${API_SERVICE:-api}
 LOC_DIRS=${LOC_DIRS:-src}
-LOC_EXCLUDE=${LOC_EXCLUDE:-(^|/)(test|tests|testdata)/|_test\.go$|\.test\.ts$}
+LOC_EXCLUDE=${LOC_EXCLUDE:-(^|/)(test|tests|testdata)/|_test\.go$|\.test\.ts$|(^|/)docs/openapi\.ts$}
 K6_IMAGE=grafana/k6:1.8.2
 CLOC_IMAGE=aldanial/cloc:2.10
 LOAD_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -105,15 +108,16 @@ image_mb=$(docker image inspect --format '{{.Size}}' "$image" | awk '{printf "%.
 log 'lines of code'
 # shellcheck disable=SC2086
 loc=$(docker run --rm -v "$PWD:/src:ro" -w /src "$CLOC_IMAGE" --quiet --json --fullpath \
-  --not-match-d='(node_modules|\.cache|build|dist)' --not-match-f="$LOC_EXCLUDE" $LOC_DIRS | jq '.SUM.code')
+  --include-lang=TypeScript,Go,SQL --not-match-d='(node_modules|\.cache|build|dist)' \
+  --not-match-f="$LOC_EXCLUDE" $LOC_DIRS | jq '.SUM.code')
 
 log 'runtime dependencies'
 if [[ -f go.mod ]]; then
   module=$(awk '/^module /{print $2}' go.mod)
   deps_direct=$(awk '/^require \(/{b=1; next} b && /^\)/{b=0} b && !/\/\/ indirect/ && NF {n++} /^require [^(]/ && !/\/\/ indirect/ {n++} END {print n+0}' go.mod)
-  deps_total=$(docker run --rm -v "$PWD:/src:ro" -w /src -e GOFLAGS=-mod=mod -e GOCACHE=/tmp/gocache -e GOPATH=/tmp/gopath \
+  deps_total=$(docker run --rm -v "$PWD:/src:ro" -w /src -e GOFLAGS='-mod=mod -buildvcs=false' -e GOCACHE=/tmp/gocache -e GOPATH=/tmp/gopath \
     golang:1.27.4-bookworm go list -deps -f '{{with .Module}}{{.Path}}{{end}}' "${GO_MAIN:-./...}" |
-    sort -u | grep -v -x "$module" | grep -c . || true)
+    sort -u | grep -v -x "$module" | grep -c .)
 else
   deps_direct=$(jq '.dependencies // {} | length' package.json)
   deps_total=$(jq '[.packages | to_entries[] | select(.key != "" and (.value.dev | not))] | length' package-lock.json)
