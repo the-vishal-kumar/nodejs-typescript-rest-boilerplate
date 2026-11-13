@@ -9,3 +9,8 @@ coverage
 *.log
 Postman
 docs
+conformance
+contract
+.cache
+.plans
+.triad

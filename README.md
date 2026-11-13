@@ -81,6 +81,12 @@ A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework 
 
 Coverage at the time of writing (Jest, 34 tests): **58% statements, 58% lines**. This counts only code loaded in the Jest process. The e2e suites call the API over HTTP in a separate process, so the routes, controllers and models they exercise are not instrumented and the number understates what the tests cover.
 
+## Contract and conformance suite
+
+- [`contract/openapi.json`](./contract/openapi.json) is the API contract, exported from [`src/docs/openapi.ts`](./src/docs/openapi.ts) with `make contract`. The e2e suite fails if the served document and the file differ.
+- [`conformance/`](./conformance) is a black-box suite (Node 22 `node:test` and `fetch`, no dependencies) that checks the behaviour over HTTP. `make conformance` starts a fresh stack and runs it. Other implementations of the same API run the same files, pinned by the `conformance-v1` tag.
+- [`conformance/load/`](./conformance/load) holds the k6 load mix and the benchmark script behind `make bench`.
+
 ## API Documentation
 
 1. [Postman Collection](./Postman/nodejs-typescript-rest-boilerplate.postman_collection.json) : [Postman Environment](./Postman//nodejs-typescript-rest-boilerplate.postman_environment.json) - Import these files to Postman to know about the APIs schema

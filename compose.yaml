@@ -5,7 +5,7 @@ services:
   api:
     build: .
     image: ntrb-api:local
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment:
       MONGO_URI: mongodb://mongo:27017/ntrb
     ports:
