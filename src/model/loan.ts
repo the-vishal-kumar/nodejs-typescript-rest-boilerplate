@@ -46,11 +46,12 @@ const loanSchema = new Schema(
       default: RepaymentStatus.Pending,
       index: true,
     },
-    // Bumped by every repayment. A repayment only commits if the revision it read
-    // is still current, so two concurrent payments cannot both apply.
-    revision: {
-      type: Schema.Types.Number,
-      default: 0,
+    // Lease held while a repayment is applied. It is claimed with a conditional
+    // update, so a second concurrent payment on the same loan gets 409; it
+    // expires on its own if the process dies while holding it.
+    paymentLockedUntil: {
+      type: Schema.Types.Date,
+      default: null,
     },
     approvedBy: {
       type: Schema.Types.ObjectId,

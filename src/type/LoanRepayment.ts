@@ -5,6 +5,10 @@ import { IRepayment, IRepaymentDocument } from './Repayment';
 // carries the stored (document) type rather than the `Date` accepted on input.
 export type IRepaymentResponse = Omit<IRepayment, 'dueDate'> & { dueDate: IRepaymentDocument['dueDate'] };
 
-export interface ILoanRepayment extends ILoan {
+// `approvedBy` (an internal id) and `paymentLockedUntil` (a concurrency lease)
+// are never sent to clients.
+export type IPublicLoan = Omit<ILoan, 'approvedBy' | 'paymentLockedUntil'>;
+
+export interface ILoanRepayment extends IPublicLoan {
   repayments: IRepaymentResponse[];
 }

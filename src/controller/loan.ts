@@ -2,9 +2,25 @@ import { randomUUID } from 'node:crypto';
 import { DateTime } from 'luxon';
 import { Loan, Repayment } from '../model';
 import { Logger, Money } from '../util/';
-import { ILoanRepayment, IUserDocument } from '../type';
+import { ILoanDocument, ILoanRepayment, IUserDocument } from '../type';
+import { IPublicLoan } from '../type/LoanRepayment';
 import { AuthorizationError, CustomError, NotFoundError } from '../error';
 import { RepaymentStatus } from '../model/loan';
+
+/**
+ * The public view of a loan. `approvedBy` holds an internal database id and
+ * `paymentLockedUntil` is a concurrency lease; neither is part of the API
+ * contract. `revision` is a field older versions wrote.
+ */
+const toPublicLoan = (loan: ILoanDocument): IPublicLoan => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { approvedBy, paymentLockedUntil, revision, ...rest } = loan.toObject() as IPublicLoan & {
+    approvedBy?: unknown;
+    paymentLockedUntil?: unknown;
+    revision?: unknown;
+  };
+  return rest;
+};
 
 export default class LoanController {
   async requestLoan({ user, amount, term }: { user: IUserDocument; amount: number; term: number }): Promise<string> {
@@ -45,7 +61,7 @@ export default class LoanController {
     // One query for all schedules instead of one per loan.
     const repayments = await Repayment.find({ loanId: { $in: loans.map(loan => loan._id) } }).sort({ dueDate: 1 });
     return loans.map(loan => ({
-      ...loan.toObject(),
+      ...toPublicLoan(loan),
       userId: user.id,
       repayments: repayments
         .filter(repayment => String(repayment.loanId) === String(loan._id))
@@ -59,7 +75,7 @@ export default class LoanController {
     if (loan.userId.toString() !== user._id.toString()) throw new AuthorizationError();
     const repayments = await Repayment.find({ loanId: loan._id }).sort({ dueDate: 1 });
     return {
-      ...loan.toObject(),
+      ...toPublicLoan(loan),
       userId: user.id,
       repayments: repayments.map(repayment => ({
         ...repayment.toObject(),

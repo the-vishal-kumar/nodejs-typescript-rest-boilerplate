@@ -9,7 +9,7 @@ export interface ILoan {
   term: number;
   status: string;
   approvedBy: string;
-  revision: number;
+  paymentLockedUntil?: Date | null;
 }
 
 // Mongoose 8 types `_id` as ObjectId by default; keep the Mongoose 7 (`any`) typing
@@ -24,7 +24,7 @@ export interface ILoanDocument extends Document<any> {
   term: number;
   status: string;
   approvedBy: string;
-  revision: number;
+  paymentLockedUntil?: Date | null;
 }
 
 export interface ILoanModel extends Model<ILoanDocument> {
