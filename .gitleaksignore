@@ -1,0 +1,22 @@
+# Findings in 2023 history only: removed from the tree; the sample JWTs expired in 2023 and the New Relic key was revoked.
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:57
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:83
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:88
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:98
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:curl-auth-header:103
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:jwt:58
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:jwt:84
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:jwt:90
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:jwt:99
+7efc38d8426c1c5b6a8feb544f43bd154c07d4c5:SOLUTION.md:jwt:105
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:curl-auth-header:47
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:curl-auth-header:72
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:curl-auth-header:77
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:curl-auth-header:87
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:curl-auth-header:92
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:jwt:48
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:jwt:73
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:jwt:79
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:jwt:88
+9d829eb27c1cf5b1a079661582b206e61a16585e:SOLUTION.md:jwt:94
+90944c822d2692462eaeb0df1b375cbfe3439633:newrelic.js:generic-api-key:16
