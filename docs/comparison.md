@@ -39,7 +39,7 @@ Every number below was measured, not estimated, by [`conformance/load/bench.sh`]
 | Lines of code, excluding tests | 1513 | 1055 | 2157 |
 | Runtime dependencies, direct / total | 12 / 298 | 6 / 69 | 3 / 8 |
 
-Throughput is HTTP requests per second across the whole mix; each journey is six requests. No request failed in any run. Throughput varied by less than 5 % between the three runs of every stack.
+Throughput is HTTP requests per second across the whole mix; each journey is six requests. No request failed in any run.
 
 ## Reading the numbers
 
