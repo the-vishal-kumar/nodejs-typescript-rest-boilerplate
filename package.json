@@ -10,6 +10,7 @@
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit",
     "test:e2e": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects e2e --runInBand",
     "typecheck": "tsc --noEmit",
+    "contract": "npm run build && node -e \"process.stdout.write(JSON.stringify(require('./build/docs/openapi').openApiDocument, null, 2) + '\\n')\" > contract/openapi.json",
     "pretty": "prettier --write \"src/**/*.ts\"",
     "pretty:check": "prettier --check \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",

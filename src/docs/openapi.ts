@@ -1,6 +1,11 @@
 /**
  * OpenAPI 3.1 description of the API, served at /docs (Swagger UI) and
  * /docs/openapi.json. The e2e suite checks that every documented route exists.
+ *
+ * This document is the shared contract of the loan API family. It is exported
+ * to contract/openapi.json (make contract) and the e2e suite fails if the two
+ * differ. Keep it free of anything specific to this stack: the other
+ * implementations serve it unchanged apart from info.title and info.description.
  */
 const errorResponse = (description: string): object => ({
   description,
@@ -37,7 +42,6 @@ export const openApiDocument = {
       '',
       'Every response carries an `X-Request-Id` header. Quote it when reporting a problem.',
     ].join('\n'),
-    license: { name: 'GPL-3.0-or-later', url: 'https://www.gnu.org/licenses/gpl-3.0.html' },
   },
   tags: [
     { name: 'Auth', description: 'Accounts and sessions' },
@@ -76,8 +80,8 @@ export const openApiDocument = {
         required: ['email', 'password'],
         additionalProperties: false,
         properties: {
-          email: { type: 'string', format: 'email', examples: ['user@example.com'] },
-          password: { type: 'string', examples: ['strong-password'] },
+          email: { type: 'string', format: 'email', maxLength: 254, examples: ['user@example.com'] },
+          password: { type: 'string', maxLength: 128, examples: ['strong-password'] },
         },
       },
       ResetPassword: {
@@ -85,7 +89,7 @@ export const openApiDocument = {
         required: ['currentPassword', 'password'],
         additionalProperties: false,
         properties: {
-          currentPassword: { type: 'string', examples: ['strong-password'] },
+          currentPassword: { type: 'string', maxLength: 128, examples: ['strong-password'] },
           password: { type: 'string', minLength: 8, maxLength: 128, examples: ['a-new-strong-password'] },
         },
       },
@@ -122,7 +126,9 @@ export const openApiDocument = {
           amount: {
             type: 'number',
             minimum: 0.01,
-            description: 'At least the next due instalment. Any surplus pays later instalments.',
+            maximum: 1000000000,
+            description:
+              'At most two decimal places. At least the next due instalment; any surplus pays later instalments.',
             examples: [3333.34],
           },
         },
@@ -181,6 +187,7 @@ export const openApiDocument = {
           403: errorResponse('Admin sign-up is disabled'),
           409: errorResponse('Email already registered'),
           422: errorResponse('Invalid payload'),
+          429: errorResponse('Too many authentication attempts'),
         },
       },
     },
@@ -212,6 +219,8 @@ export const openApiDocument = {
           },
           401: errorResponse('Invalid email or password'),
           403: errorResponse('The account is not an admin'),
+          422: errorResponse('Invalid payload'),
+          429: errorResponse('Too many authentication attempts'),
         },
       },
     },
@@ -234,6 +243,7 @@ export const openApiDocument = {
           401: errorResponse('Missing token or wrong current password'),
           403: errorResponse('New password equals the old one'),
           422: errorResponse('Invalid payload'),
+          429: errorResponse('Too many authentication attempts'),
         },
       },
     },
@@ -323,6 +333,7 @@ export const openApiDocument = {
           403: errorResponse('Not an admin, own loan, or loan not pending'),
           404: errorResponse('Loan not found'),
           409: errorResponse('Approved concurrently by another request'),
+          422: errorResponse('id is not a UUID'),
         },
       },
     },
@@ -336,7 +347,7 @@ export const openApiDocument = {
         responses: {
           204: { description: 'Payment applied' },
           401: errorResponse('Missing or invalid token'),
-          403: errorResponse('Loan not approved, amount below the due instalment or above the balance'),
+          403: errorResponse('Not the owner, loan not approved, amount below the due instalment or above the balance'),
           404: errorResponse('Loan not found'),
           409: errorResponse('Another payment on this loan is in progress, retry'),
           422: errorResponse('Invalid payload'),
@@ -353,7 +364,7 @@ export const openApiDocument = {
     '/health/ready': {
       get: {
         tags: ['Health'],
-        summary: 'Readiness probe (MongoDB reachable, not shutting down)',
+        summary: 'Readiness probe (database reachable, not shutting down)',
         responses: { 200: { description: 'Ready' }, 503: { description: 'Not ready' } },
       },
     },

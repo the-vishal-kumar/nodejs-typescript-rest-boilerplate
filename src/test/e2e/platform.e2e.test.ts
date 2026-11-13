@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { openApiDocument } from '../../docs/openapi';
@@ -93,6 +95,14 @@ describe('Platform behaviour', () => {
     it('should serve the OpenAPI document', async () => {
       const response = await request(app()).get('/docs/openapi.json').expect(200);
       expect(response.body.openapi).toBe('3.1.0');
+    });
+
+    // contract/openapi.json is the contract the other implementations serve.
+    // Regenerate it with `make contract` after changing src/docs/openapi.ts.
+    it('should serve exactly the committed contract', async () => {
+      const response = await request(app()).get('/docs/openapi.json').expect(200);
+      const contract = JSON.parse(readFileSync(resolve(__dirname, '../../../contract/openapi.json'), 'utf8'));
+      expect(response.body).toEqual(contract);
     });
 
     // Catches docs drifting from the router: every documented operation must
