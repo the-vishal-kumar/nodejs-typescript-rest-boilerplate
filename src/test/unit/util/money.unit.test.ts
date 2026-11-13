@@ -25,6 +25,17 @@ describe('Money', () => {
       const result = Money.split(amount, tenure);
       expect(result).toEqual(expected);
     });
+
+    it('should put the whole remainder on the last instalment so the sum is exact', () => {
+      const result = Money.split(100, 7);
+      expect(result).toEqual([14.28, 14.28, 14.28, 14.28, 14.28, 14.28, 14.32]);
+      expect(result.reduce((sum, value) => sum + Money.toCents(value), 0)).toBe(10000);
+    });
+
+    it('should handle a single instalment and one cent per week', () => {
+      expect(Money.split(0.07, 7)).toEqual([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]);
+      expect(Money.split(1234.56, 1)).toEqual([1234.56]);
+    });
   });
 
   describe('add', () => {

@@ -1,20 +1,25 @@
+/**
+ * Money arrives and leaves as JSON numbers with at most two decimals, but all
+ * arithmetic runs on integer cents so no floating-point error can creep in.
+ */
 export default class Money {
+  static toCents = (amount: number): number => Math.round(amount * 100);
+
+  static fromCents = (cents: number): number => cents / 100;
+
+  /**
+   * Splits `amount` into `tenure` instalments: all equal except the last,
+   * which absorbs the remainder, so they add up exactly
+   * (10000 over 3 is 3333.33, 3333.33, 3333.34).
+   */
   static split = (amount: number, tenure: number): number[] => {
-    const splitAmount = Math.floor((amount / tenure) * 100) / 100;
-    let remainingAmount = Math.round((amount - splitAmount * tenure) * 100) / 100;
-    const result: number[] = new Array(tenure).fill(splitAmount);
-
-    let index = 0;
-    while (remainingAmount > 0) {
-      result[index] = Math.round((result[index] + 0.01) * 100) / 100;
-      remainingAmount -= 0.01;
-      index = (index + 1) % tenure;
-    }
-
-    return result.reverse();
+    const total = Money.toCents(amount);
+    const base = Math.floor(total / tenure);
+    const last = total - base * (tenure - 1);
+    return [...new Array<number>(tenure - 1).fill(base), last].map(Money.fromCents);
   };
 
-  static add = (a: number, b: number): number => parseFloat((a + b).toFixed(2));
+  static add = (a: number, b: number): number => Money.fromCents(Money.toCents(a) + Money.toCents(b));
 
-  static subtract = (a: number, b: number): number => parseFloat((a - b).toFixed(2));
+  static subtract = (a: number, b: number): number => Money.fromCents(Money.toCents(a) - Money.toCents(b));
 }
