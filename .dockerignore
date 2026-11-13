@@ -1,16 +1,8 @@
-node_modules
-build
-coverage
-.git
-.github
-.husky
-.env
-.env.*
-*.log
-Postman
-docs
-conformance
-contract
-.cache
-.plans
-.triad
+# Allow-list: only what the Dockerfile copies.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!src
+!newrelic.js
