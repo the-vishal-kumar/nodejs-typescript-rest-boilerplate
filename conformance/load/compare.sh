@@ -10,8 +10,13 @@ jq -s -r '
   def ms: if . >= 100 then (. | round | tostring) else ((. * 10 | round) / 10 | tostring) end;
   def row($title; f): "| \($title) | " + (map(f) | join(" | ")) + " |";
   def lat(g): (.latency[g].p50_ms | ms) + " / " + (.latency[g].p99_ms | ms);
+  def stack_label: {
+    "express-mongodb": "Express + MongoDB",
+    "fastify-postgresql": "Fastify + PostgreSQL",
+    "go-postgresql": "Go + PostgreSQL"
+  }[.name] // .name;
   [
-    "| Measure | " + (map(.name) | join(" | ")) + " |",
+    "| Measure | " + (map(stack_label) | join(" | ")) + " |",
     "|---|" + (map("---:") | join("|")) + "|",
     row("Throughput (requests/s)"; .throughput_rps * 10 | round / 10 | tostring),
     row("Journeys/s (6 requests each)"; .journeys_per_s * 10 | round / 10 | tostring),
