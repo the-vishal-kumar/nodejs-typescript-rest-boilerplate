@@ -1,0 +1,56 @@
+{
+  "name": "express-mongodb",
+  "date": "2026-11-13T01:03:56Z",
+  "machine": {
+    "cpu": "Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz",
+    "cores": 8,
+    "ram": "10.9 GiB",
+    "docker": "29.9.3"
+  },
+  "load": {
+    "runs": 3,
+    "vus": 20,
+    "duration": "60s",
+    "warmup": "30s"
+  },
+  "throughput_rps": 125.59158054320092,
+  "journeys_per_s": 20.669702521234246,
+  "error_rate": 0,
+  "latency": {
+    "signin": {
+      "p50_ms": 213.764427,
+      "p99_ms": 405.78916898000006
+    },
+    "loan_request": {
+      "p50_ms": 117.322855,
+      "p99_ms": 227.1636911999999
+    },
+    "loan_list": {
+      "p50_ms": 116.738777,
+      "p99_ms": 235.2868513999997
+    },
+    "loan_get": {
+      "p50_ms": 109.632109,
+      "p99_ms": 212.84676967999962
+    },
+    "loan_approve": {
+      "p50_ms": 109.4877015,
+      "p99_ms": 222.98698019999975
+    },
+    "repayment": {
+      "p50_ms": 188.739121,
+      "p99_ms": 310.86816232000007
+    }
+  },
+  "rss_mib": {
+    "rest": 82.1,
+    "peak_under_load": 245.1
+  },
+  "image_mb": 469.7,
+  "cold_start_ms": 814,
+  "loc_excluding_tests": 1513,
+  "runtime_dependencies": {
+    "direct": 12,
+    "total": 298
+  }
+}

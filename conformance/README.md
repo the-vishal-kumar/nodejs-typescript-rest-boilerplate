@@ -6,7 +6,7 @@ A black-box test suite for the loan API. It talks only HTTP to a base URL, so th
 - [fastify-postgres-boilerplate](https://github.com/the-vishal-kumar/fastify-postgres-boilerplate) (Fastify, PostgreSQL)
 - [go-postgres-boilerplate](https://github.com/the-vishal-kumar/go-postgres-boilerplate) (Go, PostgreSQL)
 
-The suite and the contract it checks (`../contract/openapi.json`) are released together by git tag (`conformance-v1`). The other implementations fetch that tag; nothing is copied into them.
+The suite and the contract it checks (`../contract/openapi.json`) are released together by git tag. The other implementations fetch a tag; nothing is copied into them. `conformance-v1` was the first release; `conformance-v2` has the same tests and contract, with the benchmark script counting lines of code consistently and reporting Go dependencies correctly.
 
 ## What it checks
 

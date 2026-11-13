@@ -1,328 +1,105 @@
 # nodejs-typescript-rest-boilerplate
 
-[![CI](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml/badge.svg)](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml)
-![Node.js](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)
+One of three implementations of the same loan API: **Express + MongoDB** (this repo, the reference), [Fastify + PostgreSQL](https://github.com/the-vishal-kumar/fastify-postgres-boilerplate) and [Go + PostgreSQL](https://github.com/the-vishal-kumar/go-postgres-boilerplate). They share one contract and one conformance suite, both kept here, and are [measured side by side](./docs/comparison.md).
 
-A [NodeJs] / [TypeScript] rest application boilerplate with [Express] framework and uses [MongoDB] as a persistent layer.
+[![CI](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate/actions/workflows/ci.yml?query=branch%3Amain)
+![Node.js](https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-8.2-47A248?logo=mongodb&logoColor=white)
 
-- It contains an application that allows authenticated users to go through a loan application.
-- It uses [MongoDB] as a persistent database layer with [Mongoose] as a ODM.
-- It uses [Joi] for schema validation.
-- It can be run with [Docker] and [Docker-Compose] containerization software.
-- It has some end-to-end and unit tests written using [Jest].
-- It uses [ESLint], [Prettier], [CommitLint], [Husky] for maintaining code quality.
-- It uses [Winston] for logging.
-- It uses [New Relic] for error logging, application performance monitoring, log monitoring.
+## Problem
 
-## Problem Statement
+Customers request a loan with an amount and a term in weeks. An admin approves it. The customer repays it in weekly instalments, in order, and the loan becomes `PAID` with the last one. ([Original brief](./PROBLEM.md).)
 
-- Create an application that allows authenticated users to go through a loan application. It doesn’t have to contain too many fields, but at least “amount required” and “loan term”.
-- All the loans will be assumed to have a “weekly” repayment frequency.
-- After the loan is approved by an admin, the user must be able to submit the weekly loan repayments with an amount greater than or equal to the scheduled repayment amount.
-- It can be a simplified repay functionality, which won’t need to check if the dates are correct but will just set the weekly amount to be repaid.
+The rules are small but real:
 
-  [Read more...](./PROBLEM.md)
+- **Exact money.** Amounts have at most two decimals and are computed in integer cents. A schedule splits the amount into equal instalments with the remainder on the last one, so it always adds up (10000 over 3 is 3333.33, 3333.33, 3333.34).
+- **Approval rules.** Only an admin approves, never their own loan, and never twice.
+- **Ordered repayments.** A payment must cover the next instalment and may not exceed the balance; any surplus pays the following instalments.
+- **Concurrency.** Two payments racing on one loan must never apply money twice or lose it.
 
-## Solution
+## Design
 
-- There are four entities - User, Token, Loan, Repayment
-- Admin can signup, signin, approve a loan request, singoff, or reset password
-- User can signup, signin, raise a loan request, view all their loans, view a particular loan, make a repayment, singoff, or reset password
+```mermaid
+flowchart LR
+  client([Client]) -->|HTTP JSON| mw
+  subgraph api [Express process]
+    mw[middleware<br/>request id, helmet, CORS, compression, rate limit] --> routes[routes<br/>Bearer token + Joi validation]
+    routes --> controllers[controllers<br/>loan and repayment rules]
+    controllers --> models[Mongoose models]
+  end
+  models --> db[(MongoDB)]
+```
 
-  [Read more...](./SOLUTION.md)
+- **Express 5** with async error forwarding: routes throw, one error handler builds the envelope.
+- **Joi** validates params and bodies and converts input (numeric strings, trimmed and lower-cased email).
+- **MongoDB through Mongoose 9.** Money is stored as `Decimal128` and computed in integer cents; public ids are UUIDs, never Mongo ids.
+- **Repayment concurrency:** a standalone MongoDB has no multi-document transactions, so a payment first claims a short lease on the loan with a conditional update (`paymentLockedUntil`). Only one request holds it; a concurrent payment gets 409. The schedule is read after the claim and the lease is released when the writes are done. It expires on its own if a process dies holding it. Approval is also a conditional update.
+- **Auth:** HS256 JWTs; the database stores only a SHA-256 of each token, so sign-off and password reset revoke sessions. Passwords use scrypt.
+- **Operations:** `/health/live` never touches the database, `/health/ready` pings it and fails while shutting down. SIGTERM fails readiness, drains, closes MongoDB and exits 0. Configuration comes only from the environment and is validated at start-up, with every problem reported at once. Optional New Relic APM.
 
-## Initial setup
+## Trade-offs of this stack
 
-1. Clone from Github
-   ```bash
-   git clone https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate.git
-   ```
-1. Setup Docker and Docker Compose
+- **Flexible documents, weaker guarantees.** Loans and schedules are separate collections without transactions, so consistency is by design (write order, rollback on failure, a lease for payments) rather than by the database. The PostgreSQL versions get the same guarantee from a row lock in one transaction.
+- **Mature middleware ecosystem.** Helmet, CORS, compression and rate limiting are one line each. The cost is more runtime dependencies than the other two.
+- **Joi** gives readable messages and conversion with little code, but no static types: handlers trust that validation ran.
+- **Single-process rate limits.** Limits are kept in memory, per process. Several replicas need a shared store such as Redis.
 
-   - Install `docker` and `docker-compose` on your machine
-   - Copy `docker-compose.sample.yml` as `docker-compose.yml`
+## Comparison summary
 
-1. Install dependencies using npm
+Measured on one machine on 2026-11-13 with the shared k6 mix (20 users, API limited to 2 CPUs and 512 MiB, median of three 60 s runs). Method, all rows and the reasoning behind them: [docs/comparison.md](./docs/comparison.md).
 
-   ```bash
-   cd nodejs-typescript-rest-boilerplate
-   npm i
-   ```
+| Measure | Express + MongoDB | Fastify + PostgreSQL | Go + PostgreSQL |
+|---|---:|---:|---:|
+| Throughput (requests/s) | 125.6 | 172.5 | 182.5 |
+| Sign-in p50 / p99 (ms) | 214 / 406 | 595 / 777 | 172 / 478 |
+| Get loan p50 / p99 (ms) | 110 / 213 | 2.6 / 62.6 | 74.7 / 205 |
+| Repayment p50 / p99 (ms) | 189 / 311 | 6.9 / 71.4 | 89.3 / 239 |
+| RSS at rest (MiB) | 82.1 | 77.7 | 12.6 |
+| RSS under load, peak (MiB) | 245.1 | 256.0 | 338.6 |
+| Image size (MB) | 469.7 | 371.5 | 37.5 |
+| Cold start to ready (ms) | 814 | 1285 | 958 |
+| Lines of code, excluding tests | 1513 | 1055 | 2157 |
+| Runtime dependencies, direct / total | 12 / 298 | 6 / 69 | 3 / 8 |
 
-1. Set environment variables
+In short: Fastify answers ordinary requests fastest; Go has the highest throughput and by far the smallest image and idle memory, but the highest peak memory; this Express version is the slowest under load and has the most dependencies. The comparison explains each result, including the losses.
 
-   - Copy `.env.sample` to root directory as `.env`
-     - (Optional) Replace the value of `NEW_RELIC_LICENSE_KEY`. Generate key from [here](https://docs.newrelic.com/docs/apm/agents/nodejs-agent/getting-started/introduction-new-relic-nodejs/)
+## Quick start (Docker only)
 
-## Development
+```bash
+git clone https://github.com/the-vishal-kumar/nodejs-typescript-rest-boilerplate.git
+cd nodejs-typescript-rest-boilerplate
+make up        # API and MongoDB on http://localhost:3000, docs at /docs
+make down
+```
 
-1. Execute the command to start the application
-   ```bash
-   npm start
-   ```
+Every target runs in containers; the host needs only Docker and make.
 
-## Testing
+| Target | What it does |
+|---|---|
+| `make lint` | Prettier check and ESLint |
+| `make typecheck` | `tsc --noEmit` |
+| `make build` | Compile to `build/` |
+| `make test` | Unit and e2e tests (Jest, in-process) against a throwaway MongoDB |
+| `make contract` | Export the OpenAPI document to `contract/openapi.json` |
+| `make conformance` | Fresh stack plus the shared conformance suite |
+| `make image` / `make scan` | Production image; Trivy scan for fixable HIGH/CRITICAL CVEs |
+| `make bench` | The shared k6 load test (see below) |
 
-1. Some end-to-end and unit tests are included in `src/test` directory
-1. Tests are run using [Jest]
-1. Execute the command to run the tests
-   ```bash
-   npm test
-   ```
+Configuration lives in [`.env.sample`](./.env.sample); `make up` copies it to `.env` on first run. A [Postman collection](./Postman) is included.
 
-### Continuous integration
+## Contract, conformance suite and benchmark
 
-[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs on every push to `main` and every pull request, on Node.js 22 (read from `.nvmrc`):
+- [`contract/openapi.json`](./contract/openapi.json) is the API contract, exported from [`src/docs/openapi.ts`](./src/docs/openapi.ts) with `make contract`. The e2e suite fails if the served document and the file differ. The other implementations serve the same document with only the title and description changed.
+- [`conformance/`](./conformance) is a black-box suite (Node 22 `node:test` and `fetch`, no dependencies) that checks the behaviour over HTTP. `make conformance` starts a fresh stack and runs it. The other implementations run the same files, pinned by the `conformance-v2` tag.
+- [`conformance/load/`](./conformance/load) holds the k6 load mix and the benchmark script behind `make bench`, which runs under the CPU and memory limits in [`compose.bench.yaml`](./compose.bench.yaml). The results are in [docs/comparison.md](./docs/comparison.md).
 
-1. `npm ci`
-1. `npm run pretty:check` and `npm run lint` (ESLint 9 flat config, type-aware rules)
-1. `npm run build`
-1. Starts the built API against a MongoDB 6 service container, then runs Jest (unit + e2e) with `--coverage` and uploads the report as a build artifact
+## CI
 
-Coverage at the time of writing (Jest, 34 tests): **58% statements, 58% lines**. This counts only code loaded in the Jest process. The e2e suites call the API over HTTP in a separate process, so the routes, controllers and models they exercise are not instrumented and the number understates what the tests cover.
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml), actions pinned by commit SHA:
 
-## Contract and conformance suite
-
-- [`contract/openapi.json`](./contract/openapi.json) is the API contract, exported from [`src/docs/openapi.ts`](./src/docs/openapi.ts) with `make contract`. The e2e suite fails if the served document and the file differ.
-- [`conformance/`](./conformance) is a black-box suite (Node 22 `node:test` and `fetch`, no dependencies) that checks the behaviour over HTTP. `make conformance` starts a fresh stack and runs it. Other implementations of the same API run the same files, pinned by the `conformance-v1` tag.
-- [`conformance/load/`](./conformance/load) holds the k6 load mix and the benchmark script behind `make bench`.
-
-## API Documentation
-
-1. [Postman Collection](./Postman/nodejs-typescript-rest-boilerplate.postman_collection.json) : [Postman Environment](./Postman//nodejs-typescript-rest-boilerplate.postman_environment.json) - Import these files to Postman to know about the APIs schema
-
-## Technology
-
-- Language - [NodeJs] 22 | [TypeScript]
-- Framework - [Express]
-- Containerization Software - [Docker]
-- Version Control - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-
-## Code Quality
-
-- [ESLint]
-- [Prettier]
-- [CommitLint]
-
-## Code Review
-
-- A feature branch is created from _dev_ branch, and after completion of code, a PR is generated to _dev_ branch
-- If changes are requested by a reviewer on Github, then the person who has made the PR makes appropriate changes. The reviewer reviews again and marks the comments as resolved
-- If there are no new changes required, then PR is merged with _dev_ branch
-
-## Managing Credentials
-
-- Credentials live in `.env` file
-
-<!---
-## Hosting
-
- - [Heroku]
--->
-
-<!---
-## Environments
-
-Create three new heroku apps in the `nodejs-typescript-rest-boilerplate` pipeline:
-
-- Development
-- UAT/Staging
-- Production
-
-In app's settings, set correctly all required config variables
-
-**Note**: Development server is used to run Test Cases before deploying on Staging
--->
-
-## Git Workflow
-
-- A branch is created for each ticket from _dev_ branch
-- Example of Branch Name:
-  - feature/{ticket_number}
-  - bugfix/{ticket_number}
-  - hotfix/{ticket_number}
-  - dev
-  - staging
-  - master
-- Read next section for more information
-
-<!--
-## CI and Deployment
-
-- Auto deployment is triggered on Heroku CI itself when code is pushed to respective branches. If all the test cases (feature, unit, postman, http, console etc.) doesn't pass, then build won't be deployed
-- On pushing the code to `dev` branch, test cases will run. On passing all the tests, the build
-  will deploy on `Development` environment
-- On pushing the code to `staging` branch, test cases will run. On passing all the tests, the build will deploy on `Staging` environment
-- On pushing the code to `master` branch, test cases will run. On passing all the tests, the build will deploy on `Production` environment
--->
-
-## Error Logging
-
-- [New Relic]
-
-## Application Performance Monitoring
-
-- [New Relic]
-
-## Log Monitoring
-
-- [New Relic]
-
-<!---
-## Backups
-
-- Database backups are made every 24 hours at 2100 hours UTC time by Heroku for Staging and Production environment
--->
-
-## Folder Structure
-
-      📦nodejs-typescript-rest-boilerplate
-      ┣ 📂.husky
-      ┃ ┣ 📂\_
-      ┃ ┃ ┣ 📜.gitignore
-      ┃ ┃ ┗ 📜husky.sh
-      ┃ ┣ 📜commit-msg
-      ┃ ┣ 📜pre-commit
-      ┃ ┗ 📜pre-push
-      ┣ 📂Postman
-      ┃ ┣ 📜nodejs-typescript-rest-boilerplate.postman_collection.json
-      ┃ ┗ 📜nodejs-typescript-rest-boilerplate.postman_environment.json
-      ┣ 📂src
-      ┃ ┣ 📂app
-      ┃ ┃ ┣ 📂mongo-server
-      ┃ ┃ ┃ ┣ 📜Dockerfile
-      ┃ ┃ ┃ ┗ 📜index.ts
-      ┃ ┃ ┣ 📂mongo-server-test
-      ┃ ┃ ┃ ┗ 📜Dockerfile
-      ┃ ┃ ┣ 📂node-server
-      ┃ ┃ ┃ ┣ 📜Dockerfile
-      ┃ ┃ ┃ ┗ 📜index.ts
-      ┃ ┃ ┗ 📜index.ts
-      ┃ ┣ 📂config
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┗ 📜mongo-config.ts
-      ┃ ┣ 📂controller
-      ┃ ┃ ┣ 📜auth.ts
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜loan.ts
-      ┃ ┃ ┗ 📜repayment.ts
-      ┃ ┣ 📂error
-      ┃ ┃ ┣ 📜authentication.ts
-      ┃ ┃ ┣ 📜authorization.ts
-      ┃ ┃ ┣ 📜custom.ts
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜notFound.ts
-      ┃ ┃ ┗ 📜validation.ts
-      ┃ ┣ 📂middleware
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜logRequestResponse.ts
-      ┃ ┃ ┣ 📜validateAccessToken.ts
-      ┃ ┃ ┣ 📜validateIsAdmin.ts
-      ┃ ┃ ┗ 📜validateSchema.ts
-      ┃ ┣ 📂model
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜loan.ts
-      ┃ ┃ ┣ 📜repayment.ts
-      ┃ ┃ ┣ 📜token.ts
-      ┃ ┃ ┗ 📜user.ts
-      ┃ ┣ 📂route
-      ┃ ┃ ┣ 📜auth.ts
-      ┃ ┃ ┣ 📜home.ts
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜loan.ts
-      ┃ ┃ ┗ 📜repayment.ts
-      ┃ ┣ 📂schema
-      ┃ ┃ ┣ 📜auth.ts
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜loan.ts
-      ┃ ┃ ┗ 📜repayment.ts
-      ┃ ┣ 📂test
-      ┃ ┃ ┣ 📂e2e
-      ┃ ┃ ┃ ┣ 📜auth.e2e.test.ts
-      ┃ ┃ ┃ ┗ 📜loan.e2e.test.ts
-      ┃ ┃ ┗ 📂unit
-      ┃ ┃ ┃ ┗ 📂util
-      ┃ ┃ ┃ ┃ ┣ 📜enum.unit.test.ts
-      ┃ ┃ ┃ ┃ ┣ 📜money.unit.test.ts
-      ┃ ┃ ┃ ┃ ┗ 📜password.unit.test.ts
-      ┃ ┣ 📂type
-      ┃ ┃ ┣ 📂express
-      ┃ ┃ ┃ ┗ 📜index.d.ts
-      ┃ ┃ ┣ 📜Loan.ts
-      ┃ ┃ ┣ 📜LoanRepayment.ts
-      ┃ ┃ ┣ 📜Repayment.ts
-      ┃ ┃ ┣ 📜ResponseHandler.ts
-      ┃ ┃ ┣ 📜Token.ts
-      ┃ ┃ ┣ 📜User.ts
-      ┃ ┃ ┗ 📜index.ts
-      ┃ ┣ 📂util
-      ┃ ┃ ┣ 📜enum.ts
-      ┃ ┃ ┣ 📜index.ts
-      ┃ ┃ ┣ 📜logger.ts
-      ┃ ┃ ┣ 📜money.ts
-      ┃ ┃ ┣ 📜pagination.ts
-      ┃ ┃ ┣ 📜password.ts
-      ┃ ┃ ┗ 📜responseHandler.ts
-      ┃ ┗ 📜index.ts
-      ┣ 📜.commitlintrc.json
-      ┣ 📜.dockerignore
-      ┣ 📜.env
-      ┣ 📜.env.sample
-      ┣ 📜.env.test
-      ┣ 📜eslint.config.mjs
-      ┣ 📜.gitignore
-      ┣ 📜.nvmrc
-      ┣ 📜.prettierrc.json
-      ┣ 📜LICENSE
-      ┣ 📜PROBLEM.md
-      ┣ 📜README.md
-      ┣ 📜SOLUTION.md
-      ┣ 📜docker-compose.sample.yml
-      ┣ 📜docker-compose.test.yml
-      ┣ 📜docker-compose.yml
-      ┣ 📜jest.config.js
-      ┣ 📜newrelic.js
-      ┣ 📜newrelic_agent.log
-      ┣ 📜package-lock.json
-      ┣ 📜package.json
-      ┗ 📜tsconfig.json
-
-## Project Specific Knowledge
-
-- [JWT]
-
-<!---
-## Production Setup
-
-## External Services/API Reference
-
-## FAQ
--->
+1. Production dependency audit, Prettier, ESLint, type-check and build, Jest unit and e2e tests against a MongoDB service, with the coverage report as an artifact.
+1. Image build, compose up, the conformance suite, a smoke test, a check that SIGTERM exits 0, and a Trivy scan.
 
 ## License
 
-- AGPL-3.0-or-later
-
-## Meet The Maker
-
-[Vishal Kumar] - Software Engineer 👨‍💻 and an Aspiring Entrepreneur👨‍💼
-
-[Vishal Kumar]: https://www.linkedin.com/in/the-vishal-kumar/
-[NodeJs]: https://nodejs.org/en
-[TypeScript]: https://www.typescriptlang.org/
-[Express]: https://expressjs.com/
-[MongoDB]: https://mongodb.com/
-[Mongoose]: https://mongoosejs.com/
-[Joi]: https://joi.dev/
-[Docker]: https://www.docker.com/
-[Docker-Compose]: https://docs.docker.com/compose/
-[ESLint]: https://eslint.org/
-[Prettier]: https://prettier.io/
-[CommitLint]: https://commitlint.js.org/
-[Husky]: https://typicode.github.io/husky/
-[Jest]: https://jestjs.io/
-[Heroku]: https://www.heroku.com/
-[Winston]: https://github.com/winstonjs/winston
-[New Relic]: https://newrelic.com
-[JWT]: https://jwt.io/
-[Git]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+[GPL-3.0-or-later](./LICENSE), Vishal Kumar.
